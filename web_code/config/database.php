@@ -26,15 +26,15 @@ $httpHost = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '';
 if (strpos($httpHost, 'ct.ws') !== false || strpos($httpHost, 'infinityfree') !== false || strpos($httpHost, 'epizy') !== false) {
     $isLocalEnv = false;
 } else {
-    /* กรณีรันบนเครื่อง Local (XAMPP / CLI) */
-    $isLocalEnv = ($httpHost === 'localhost' || $httpHost === '127.0.0.1' || strpos($httpHost, 'localhost:') === 0 || php_sapi_name() === 'cli');
+    /* กรณีรันบนเครื่อง Local (XAMPP / CLI / IP LAN เช่น 192.168.x.x หรือ 10.0.2.2 จาก Emulator) */
+    $isLocalEnv = true;
 }
 
 if ($isLocalEnv) {
     define('DB_HOST', '127.0.0.1');
     define('DB_USER', 'root');
     define('DB_PASS', '');
-    define('DB_NAME', 'if0_42265566_phuphadb');
+    define('DB_NAME', 'phupha_db');
 } else {
     define('DB_HOST', 'sql311.infinityfree.com');
     define('DB_USER', 'if0_42265566');
