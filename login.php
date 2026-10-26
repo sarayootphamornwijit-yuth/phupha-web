@@ -1,68 +1,150 @@
 <?php
-session_start();
-include 'db.php';
+// login.php
+// ไฟล์นี้ทำหน้าที่แสดงฟอร์มเข้าสู่ระบบ และประมวลผลการล็อกอินของผู้ใช้
 
-$error = '';
+require_once 'config/database.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
-    $student_id = $conn->real_escape_string($_POST['student_id']);
-    $password = $_POST['password'];
 
-    $sql = "SELECT * FROM users WHERE student_id = '$student_id'";
-    $result = $conn->query($sql);
+// ส่วนที่ 1 ตรวจสอบสถานะล็อกอิน
+// ถ้าล็อกอินอยู่แล้ว ให้ redirect กลับไปหน้าหลักทันที ไม่ต้องแสดงหน้า login
+if (isLoggedIn()) {
+    header("Location: index.php");
+    exit;
+}
 
-    if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
 
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['student_id'] = $user['student_id'];
-            $_SESSION['title_prefix'] = $user['title']; // เก็บคำนำหน้า
-            $_SESSION['fullname'] = $user['fullname'];
-            $_SESSION['role'] = $user['role'];
+// ส่วนที่ 2 กำหนดตัวแปรเริ่มต้น
+// ตัวแปรสำหรับเก็บข้อความ error ที่อาจเกิดขึ้นระหว่างการล็อกอิน
+$errorMessage = '';
 
-            header("Location: index.php");
-            exit();
+
+// ส่วนที่ 3 ประมวลผลฟอร์มล็อกอิน (POST)
+// ทำงานเฉพาะเมื่อผู้ใช้กด Submit ฟอร์ม
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // รับค่าจากฟอร์ม และลบ whitespace หัวท้ายออก
+    $inputUsername = trim($_POST['username'] ?? '');
+    $inputPassword = $_POST['password'] ?? '';
+
+    // ค้นหาผู้ใช้จากฐานข้อมูล
+    // ใช้ Prepared Statement เพื่อป้องกัน SQL Injection
+    $statement = $conn->prepare(
+        "SELECT user_id, username, password, name, role, committee_position, user_type
+        FROM users
+        WHERE username = ?"
+    );
+    $statement->bind_param("s", $inputUsername);
+    $statement->execute();
+    $queryResult = $statement->get_result();
+
+    // ตรวจสอบผลลัพธ์การค้นหา
+    if ($queryResult->num_rows === 1) {
+
+        // พบผู้ใช้ในระบบ ดึงข้อมูลออกมา
+        $userRecord = $queryResult->fetch_assoc();
+
+        // ตรวจสอบรหัสผ่านที่ผู้ใช้กรอกกับรหัสผ่านที่เข้ารหัสไว้ในฐานข้อมูล
+        $isPasswordCorrect = password_verify($inputPassword, $userRecord['password']);
+
+        if ($isPasswordCorrect) {
+
+            // ป้องกัน Session Fixation โดยการเปลี่ยน Session ID เมื่อล็อกอินสำเร็จ
+            session_regenerate_id(true);
+
+            // รหัสผ่านถูกต้อง: บันทึกข้อมูลลง Session
+            $_SESSION['user_id']            = $userRecord['user_id'];
+            $_SESSION['username']           = $userRecord['username'];
+            $_SESSION['name']               = $userRecord['name'];
+            $_SESSION['role']               = $userRecord['role'];
+            $_SESSION['committee_position'] = $userRecord['committee_position'] ?? null;
+            $_SESSION['user_type']          = $userRecord['user_type'] ?? null;
+
+            // กำหนดหน้าที่จะ Redirect ไปหลังล็อกอิน
+            // ถ้ามี redirect URL ให้ไป จะนำทางไปยัง URL นั้น (ตรวจสอบความปลอดภัยด้วย regex)
+            // ถ้าไม่มี จะไปที่หน้า index.php ตามปกติ
+            $redirectUrl = 'index.php';
+
+            if (!empty($_POST['redirect'])) {
+                $redirectUrl = $_POST['redirect'];
+            } elseif (!empty($_GET['redirect'])) {
+                $redirectUrl = $_GET['redirect'];
+            }
+
+            // ตรวจสอบว่า redirect URL ปลอดภัย (ไม่มีอักขระอันตราย)
+            $isSafeRedirect = preg_match('/^[a-zA-Z0-9_.\-\/]+(?:\?[a-zA-Z0-9_.&=%\-]+)?$/', $redirectUrl) && !preg_match('/^(?:https?:)?\/\//i', $redirectUrl);
+            if (!$isSafeRedirect) {
+                $redirectUrl = 'index.php';
+            }
+
+            // นำทางไปยังหน้าปลายทาง
+            header("Location: " . $redirectUrl);
+            exit;
         } else {
-            $error = "รหัสผ่านไม่ถูกต้อง";
+
+            // ข้อความ error แบบรวม ป้องกันผู้ไม่หวังดีสุ่มเดาว่ามี Username นี้ในระบบหรือไม่
+            $errorMessage = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
         }
     } else {
-        $error = "ไม่พบรหัสประจำตัวนักศึกษานี้ในระบบ";
+
+        // ไม่พบผู้ใช้งานในระบบ (ใช้ข้อความเดียวกับรหัสผ่านผิดเพื่อความปลอดภัย)
+        $errorMessage = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     }
+
+    // ปิด Prepared Statement เพื่อคืน resource
+    $statement->close();
 }
+
+
+// ส่วนที่ 4 แสดงหน้า HTML
+include 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="th">
 
-<head>
-    <meta charset="UTF-8">
-    <title>เข้าสู่ระบบสมาชิก</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+<div class="container d-flex justify-center align-center" style="min-height: 80vh;">
+    <div class="card" style="max-width: 400px; width: 100%; border: 1px solid var(--border-color); box-shadow: none;">
 
-<body class="auth-page">
-    <div class="auth-box">
-        <h2 style="text-align: center; margin-bottom: 25px; color: var(--primary-color);">เข้าสู่ระบบเพื่อนภูผา</h2>
+        <!-- ส่วนหัวของฟอร์ม -->
+        <div class="text-center mb-4">
+            <h2 class="m-0" style="color: #000;">เข้าสู่ระบบ</h2>
+            <p class="text-muted text-sm mt-1">ลงชื่อเข้าใช้เพื่อจัดการกิจกรรมของคุณ</p>
+        </div>
 
-        <?php if ($error): ?>
-            <div class="alert-danger"><?php echo $error; ?></div>
+        <!-- แสดงข้อความ error ถ้ามี -->
+        <?php if ($errorMessage !== ''): ?>
+            <div class="alert alert-danger text-center mb-3">
+                <?= htmlspecialchars($errorMessage) ?>
+            </div>
         <?php endif; ?>
 
-        <form action="" method="POST">
-            <div class="form-group">
-                <label>รหัสนักศึกษา</label>
-                <input type="text" name="student_id" class="form-control" placeholder="เช่น 66123123" required>
+        <!-- ฟอร์มเข้าสู่ระบบ -->
+        <form action="login.php" method="POST">
+
+            <!-- ส่ง redirect URL ต่อไปถ้ามีค่า -->
+            <?php if (!empty($_GET['redirect'])): ?>
+                <input type="hidden" name="redirect" value="<?= htmlspecialchars($_GET['redirect']) ?>">
+            <?php endif; ?>
+
+            <!-- ฟิลด์ Username -->
+            <div class="form-group mb-3">
+                <label class="form-label" style="color: #000;">ชื่อผู้ใช้งาน</label>
+                <input type="text" name="username" class="form-control" required autofocus>
             </div>
-            <div class="form-group">
-                <label>รหัสผ่าน</label>
+
+            <!-- ฟิลด์ Password -->
+            <div class="form-group mb-4">
+                <label class="form-label" style="color: #000;">รหัสผ่าน</label>
                 <input type="password" name="password" class="form-control" required>
             </div>
-            <button type="submit" name="login" class="btn-block" style="margin-top: 10px;">ยืนยันเข้าสู่ระบบ</button>
+
+            <!-- ปุ่ม Submit -->
+            <button type="submit" class="btn btn-primary btn-block" style="box-shadow: none !important;">เข้าสู่ระบบ</button>
         </form>
 
-        <p style="text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-muted);">
-            ยังไม่มีบัญชีใช่ไหม? <a href="register.php" style="color:var(--accent-color); text-decoration:none; font-weight:500;">สมัครสมาชิกใหม่ที่นี่</a>
-        </p>
-    </div>
-</body>
+        <!-- ลิงก์ไปหน้าสมัครสมาชิก -->
+        <div class="text-center mt-4 text-sm">
+            ยังไม่มีบัญชีใช่หรือไม่? <a href="register.php" class="text-link" style="text-decoration: none !important; border-bottom: none !important; box-shadow: none !important; outline: none !important;">สมัครสมาชิกใหม่</a>
+        </div>
 
-</html>
+    </div>
+</div>
+
+<?php include 'includes/footer.php'; ?>

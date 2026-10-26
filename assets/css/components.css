@@ -1,0 +1,1198 @@
+/* คลาสส่วนประกอบและตกแต่งหน้าเว็บทั่วไป ชมรมเพื่อนภูผา */
+
+/* 1. UTILITY CLASSES: คลาสช่วยเหลือสำหรับจัด Flex, จัดตำแหน่ง และระยะห่าง Spacing */
+
+/* Display */
+.d-flex {
+    display: flex;
+}
+
+.d-none {
+    display: none;
+}
+
+.d-block {
+    display: block;
+}
+
+.d-inline-flex {
+    display: inline-flex;
+}
+
+/* Flex */
+.flex-column {
+    flex-direction: column;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.flex-grow-1 {
+    flex-grow: 1;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-end {
+    justify-content: flex-end;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.align-end {
+    align-items: flex-end;
+}
+
+.align-start {
+    align-items: flex-start;
+}
+
+/* Gap */
+.gap-1 {
+    gap: 4px;
+}
+
+.gap-2 {
+    gap: 8px;
+}
+
+.gap-3 {
+    gap: 12px;
+}
+
+.gap-4 {
+    gap: 20px;
+}
+
+/* Margin */
+.m-0 {
+    margin: 0;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.mt-1 {
+    margin-top: 4px;
+}
+
+.mt-2 {
+    margin-top: 8px;
+}
+
+.mt-3 {
+    margin-top: 12px;
+}
+
+.mt-4 {
+    margin-top: 20px;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.mb-1 {
+    margin-bottom: 4px;
+}
+
+.mb-2 {
+    margin-bottom: 8px;
+}
+
+.mb-3 {
+    margin-bottom: 12px;
+}
+
+.mb-4 {
+    margin-bottom: 20px;
+}
+
+.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Padding */
+.p-0 {
+    padding: 0;
+}
+
+.p-1 {
+    padding: 4px;
+}
+
+.p-2 {
+    padding: 8px;
+}
+
+.p-3 {
+    padding: 12px;
+}
+
+.p-4 {
+    padding: 20px;
+}
+
+.px-2 {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.px-3 {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.py-1 {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.py-2 {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.py-4 {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.pt-3 {
+    padding-top: 12px;
+}
+
+.pt-4 {
+    padding-top: 20px;
+}
+
+.pb-3 {
+    padding-bottom: 12px;
+}
+
+/* Width / Height */
+.w-100 {
+    width: 100%;
+}
+
+.h-100 {
+    height: 100%;
+}
+
+.w-15px {
+    width: 15px;
+    display: inline-block;
+    text-align: center;
+}
+
+.w-20px {
+    width: 20px;
+    display: inline-block;
+    text-align: center;
+}
+
+/* Text Alignment */
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+/* Text Sizes */
+.text-xs {
+    font-size: 11px;
+}
+
+.text-sm {
+    font-size: 13px;
+}
+
+.text-md {
+    font-size: 16px;
+}
+
+.text-lg {
+    font-size: 18px;
+}
+
+.text-xl {
+    font-size: 24px;
+}
+
+.text-2xl {
+    font-size: 32px;
+}
+
+/* Text Colors */
+.text-main {
+    color: var(--text-main);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-light {
+    color: var(--text-light);
+}
+
+.text-white {
+    color: white;
+}
+
+.text-primary {
+    color: var(--color-primary);
+}
+
+.text-primary-dark {
+    color: var(--color-primary-dark);
+}
+
+.text-success {
+    color: var(--color-success);
+}
+
+.text-warning {
+    color: var(--color-warning);
+}
+
+.text-danger {
+    color: var(--color-danger);
+}
+
+.text-info {
+    color: var(--color-info);
+}
+
+.text-secondary {
+    color: var(--color-secondary);
+}
+
+/* Font Weights */
+.font-weight-light {
+    font-weight: 300;
+}
+
+.font-weight-normal {
+    font-weight: 400;
+}
+
+.font-weight-medium {
+    font-weight: 500;
+}
+
+.font-weight-bold {
+    font-weight: 600;
+}
+
+.font-italic {
+    font-style: italic;
+}
+
+/* Text Utilities */
+.text-decoration-none {
+    text-decoration: none;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Background Colors */
+.bg-main {
+    background-color: var(--bg-main);
+}
+
+.bg-surface {
+    background-color: var(--bg-surface);
+}
+
+.bg-primary {
+    background-color: var(--color-primary);
+}
+
+.bg-blue-light {
+    background-color: var(--color-primary-pale);
+}
+
+.bg-warning {
+    background-color: var(--color-warning);
+}
+
+.bg-success {
+    background-color: var(--color-success);
+}
+
+.bg-danger {
+    background-color: var(--color-danger);
+}
+
+/* Position */
+.position-relative {
+    position: relative;
+}
+
+.position-absolute {
+    position: absolute;
+}
+
+.top-0 {
+    top: 0;
+}
+
+.right-0 {
+    right: 0;
+}
+
+.bottom-0 {
+    bottom: 0;
+}
+
+.left-0 {
+    left: 0;
+}
+
+/* Border */
+.border-bottom {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.border-top {
+    border-top: 1px solid var(--border-color);
+}
+
+.border-left {
+    border-left: 1px solid var(--border-color);
+}
+
+.border-light {
+    border: 1px solid var(--border-color);
+}
+
+.border-dashed {
+    border: 1px dashed var(--text-light) !important;
+    box-shadow: none !important;
+}
+
+.border-primary {
+    border-color: var(--color-primary);
+}
+
+/* Border Radius */
+.rounded {
+    border-radius: var(--border-radius-sm);
+}
+
+.rounded-circle {
+    border-radius: 50%;
+}
+
+/* Shadows */
+.shadow-sm {
+    box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+    box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+    box-shadow: var(--shadow-lg);
+}
+
+/* Overflow */
+.overflow-hidden {
+    overflow: hidden;
+}
+
+/* Opacity */
+.opacity-50 {
+    opacity: 0.5;
+}
+
+.opacity-75 {
+    opacity: 0.75;
+}
+
+/* Cursor */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}
+
+/* List */
+.list-unstyled {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+
+
+/* 2. CARDS */
+
+
+.card {
+    background: var(--bg-surface);
+    border-radius: var(--border-radius);
+    padding: var(--space-20);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+}
+
+/* hover ปิดไว้ตามที่กำหนด — คลิกไม่ได้จึงไม่ต้องเปลี่ยนสี */
+
+.card-body {
+    flex: 1;
+}
+
+.activity-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--space-16);
+    background: white;
+    transition: var(--transition);
+}
+
+.activity-card:hover {
+    border-color: var(--color-primary-light);
+    box-shadow: var(--shadow-sm);
+}
+
+
+/* 3. BUTTONS: สไตล์ปุ่มกด ขนาด สี และการจัดวางไอคอนภายในปุ่ม */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-8);
+    padding: 10px 20px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition);
+    text-decoration: none;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.4;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: width 0.4s, height 0.4s, top 0.4s, left 0.4s;
+    transform: translate(-50%, -50%);
+}
+
+.btn:active::after {
+    width: 200px;
+    height: 200px;
+}
+
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+a.btn-primary,
+a.btn-primary:hover,
+a.btn-primary:focus,
+a.btn-primary:active {
+    color: white !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-success,
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active,
+a.btn-success,
+a.btn-success:hover,
+a.btn-success:focus,
+a.btn-success:active {
+    color: white !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #43A047, #66BB6A);
+    box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #388E3C, #43A047);
+    transform: translateY(-1px);
+}
+
+.btn-danger,
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:active,
+a.btn-danger,
+a.btn-danger:hover,
+a.btn-danger:focus,
+a.btn-danger:active {
+    color: white !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #E53935, #EF5350);
+    box-shadow: 0 2px 8px rgba(229, 57, 53, 0.3);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #C62828, #E53935);
+    transform: translateY(-1px);
+}
+
+.btn-warning,
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active,
+a.btn-warning,
+a.btn-warning:hover,
+a.btn-warning:focus,
+a.btn-warning:active {
+    color: #33290A !important;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #F9A825, #FBC02D);
+    box-shadow: 0 2px 8px rgba(249, 168, 37, 0.3);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #F57F17, #F9A825);
+    transform: translateY(-1px);
+}
+
+.btn-surface,
+.btn-surface:hover,
+.btn-surface:focus,
+.btn-surface:active,
+a.btn-surface,
+a.btn-surface:hover,
+a.btn-surface:focus,
+a.btn-surface:active {
+    color: #000000 !important;
+}
+
+.btn-surface {
+    background: white;
+    border: 1px solid var(--border-color);
+}
+
+.btn-surface:hover {
+    background: var(--bg-main);
+    border-color: var(--color-primary-light);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-8);
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: var(--bg-main);
+    transform: scale(1.1);
+}
+
+/* ปิดเอฟเฟกต์อนิเมชั่น hover และเงาของปุ่มทั้งหมดในระบบ ยกเว้นในเมนูจัดการกิจกรรม และจัดการสมาชิก */
+body:not(.allow-btn-hover) .btn,
+body:not(.allow-btn-hover) .btn-icon {
+    transition: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+body:not(.allow-btn-hover) .btn::after {
+    display: none !important;
+}
+
+body:not(.allow-btn-hover) .btn:hover,
+body:not(.allow-btn-hover) .btn-icon:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+
+/* 4. FORMS: สไตล์ฟอร์มกรอกข้อมูล ช่องรับข้อความ ตัวเลือก และป้ายกำกับ */
+
+.form-group {
+    margin-bottom: var(--space-16);
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: var(--space-4);
+    font-size: 14px;
+    color: var(--text-main);
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px var(--space-12);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-main);
+    background: white;
+    transition: var(--transition);
+    outline: none;
+}
+
+.form-control:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
+}
+
+.form-control::placeholder {
+    color: var(--text-light);
+}
+
+.form-control:focus::placeholder {
+    color: transparent !important;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235F7A5F' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+/* Input with icon */
+.input-with-icon {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    font-size: 14px;
+    z-index: 1;
+}
+
+.input-with-icon .form-control {
+    padding-left: 38px;
+}
+
+
+/* 5. TABLES: รูปแบบตารางแสดงข้อมูลและคอนเทนเนอร์เลื่อนแนวนอน */
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--border-radius-sm);
+}
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table thead {
+    position: sticky;
+    top: 0;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td,
+.table th {
+    padding: var(--space-8) var(--space-12);
+    vertical-align: middle;
+}
+
+.table tbody tr {
+    transition: none;
+}
+
+/* hover ปิดไว้ — แถวตารางคลิกไม่ได้จึงไม่ต้องเปลี่ยนสีพื้นหลัง */
+
+
+/* 6. BADGES: ป้ายกำกับสถานะขนาดเล็กสำหรับบอกสถานะข้อมูล */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.badge-primary {
+    background: var(--color-primary-pale);
+    color: var(--color-primary-dark);
+}
+
+.badge-success {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.badge-warning {
+    background: #FFF8E1;
+    color: #F57F17;
+}
+
+.badge-danger {
+    background: #FFEBEE;
+    color: #C62828;
+}
+
+.badge-info {
+    background: #E1F5FE;
+    color: #0277BD;
+}
+
+
+/* 7. ALERTS: แสดงกล่องข้อความแจ้งเตือนสถานะต่างๆ (สำเร็จ, ล้มเหลว, แจ้งเตือน) บนหน้าเว็บ */
+
+.alert {
+    padding: var(--space-12) var(--space-16);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+}
+
+.alert-success {
+    background: #E8F5E9;
+    color: #1B5E20;
+}
+
+.alert-danger {
+    background: #FFEBEE;
+    color: #B71C1C;
+}
+
+.alert-warning {
+    background: #FFF8E1;
+    color: #E65100;
+}
+
+.alert-info {
+    background: #E1F5FE;
+    color: #01579B;
+}
+
+
+/* 8. TEXT LINK: ลิงก์ข้อความทั่วไปสำหรับไปยังหน้าต่างๆ */
+
+.text-link,
+.text-link:hover,
+.text-link:focus,
+.text-link:active {
+    color: var(--color-primary);
+    text-decoration: none !important;
+    border: none !important;
+    border-bottom: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+}
+
+.text-link::before,
+.text-link::after,
+.text-link:hover::before,
+.text-link:hover::after {
+    display: none !important;
+    content: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    border: none !important;
+}
+
+.text-link:hover {
+    color: var(--color-primary-dark);
+}
+
+
+/* 9. TAB SYSTEM: ปุ่มสลับแท็บเมนูสำหรับเปลี่ยนมุมมองข้อมูล */
+
+.tab-btn {
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    box-shadow: none !important;
+    transition: none !important;
+    transform: none !important;
+}
+
+.tab-btn:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.tab-btn.active {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: none !important;
+}
+
+
+/* 10. ANIMATIONS: คีย์เฟรมและการเคลื่อนไหวเพื่อเพิ่มความลื่นไหลให้หน้าเว็บ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+/* Apply subtle entrance animation to cards */
+.card {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(46, 125, 50, 0.2);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* 11. STATUS INDICATORS: จุดไฟแสดงสถานะการทำงาน (เปิดใช้งาน, ออฟไลน์, พักใช้งาน) */
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-dot.online {
+    background: var(--color-success);
+}
+
+.status-dot.offline {
+    background: var(--text-light);
+}
+
+.status-dot.pending {
+    background: var(--color-warning);
+}
+
+
+/* 12. EMPTY STATE: การแสดงผลกล่องข้อความเมื่อยังไม่มีรายการข้อมูลในระบบ */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: var(--text-light);
+    margin-bottom: var(--space-16);
+}
+
+
+/* 13. TOOLTIP: แสดงกล่องคำแนะนำย่อยเมื่อนำเมาส์ไปชี้ที่ข้อความหรือปุ่ม */
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 10px;
+    background: var(--text-main);
+    color: white;
+    font-size: 11px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition-fast);
+    margin-bottom: 6px;
+}
+
+[data-tooltip]:hover::before {
+    opacity: 1;
+}
+
+
+/* 14. ADDITIONAL RESPONSIVE FIXES: การปรับแต่งขนาดการ์ดและเลย์เอาต์เพิ่มเติมบนจอมือถือ */
+
+@media (max-width: 600px) {
+    .d-flex.flex-row.flex-wrap {
+        flex-direction: column;
+    }
+
+    .text-xl {
+        font-size: 20px;
+    }
+
+    .card {
+        padding: var(--space-16);
+    }
+}
+
+
+/* 15. NOTIFICATION BADGE: ป้ายแจ้งเตือนเมนูและระบบฟีดแบ็ก */
+
+/* Badge ลอยบนเมนู — คล้ายแอปข้อความ */
+.nav-link-with-badge {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.notification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #E53935;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+    line-height: 1;
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+/* Badge แบบลอย (floating) ติดมุมขวาบน */
+.notification-badge-float {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: #E53935;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    line-height: 1;
+    animation: badgePulse 2s ease-in-out infinite;
+    box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
+}
+
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* สีข้อความแดงสำหรับจำนวนโครงการรออนุมัติ (แบบตัวอักษร) */
+.pending-count-text {
+    color: #E53935;
+    font-weight: 700;
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+/* Feedback form ใน approval page */
+.feedback-form-container {
+    background: #F3E5F5;
+    border: 1px solid #CE93D8;
+    border-radius: var(--border-radius-sm);
+    padding: var(--space-12);
+    margin-top: var(--space-12);
+}
+
+.feedback-form-container .form-label {
+    color: #6A1B9A;
+    font-size: 12px;
+}
+
+.feedback-item {
+    background: #EDE7F6;
+    border-left: 3px solid #7E57C2;
+    border-radius: var(--border-radius-sm);
+    padding: var(--space-8) var(--space-12);
+    margin-bottom: var(--space-8);
+    font-size: 13px;
+}
+
+.feedback-item .feedback-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Badge สำหรับ feedback ที่ยังไม่อ่าน (สีม่วง) */
+.feedback-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: #7E57C2;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    line-height: 1;
+    animation: badgePulse 2s ease-in-out infinite;
+}

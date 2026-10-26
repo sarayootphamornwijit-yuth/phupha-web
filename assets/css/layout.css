@@ -1,0 +1,393 @@
+/* โครงสร้างหน้าเว็บ เลย์เอาต์ และการแสดงผลตามขนาดหน้าจอ ชมรมเพื่อนภูผา */
+
+/* โครงสร้างแถบเมนูด้านข้าง (Sidebar) สำหรับคอมพิวเตอร์ */
+.sidebar {
+    width: var(--sidebar-width);
+    position: fixed;
+    top: 0;
+    bottom: 0; /* Ensures it never goes below viewport */
+    left: 0;
+    background: #FFFFFF;
+    z-index: 1000;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+    border-right: 1px solid var(--border-color);
+}
+
+.sidebar-header {
+    padding: var(--space-20) var(--space-20) var(--space-16);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.brand-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.brand-logo {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+}
+
+/* รายการลิงก์เมนูนำทางในแถบด้านข้าง */
+.sidebar-nav {
+    flex: 1;
+    padding: var(--space-12) 0;
+    overflow-y: auto;
+}
+
+.nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-link {
+    display: block;
+    padding: 14px 16px 14px 40px;
+    margin-bottom: 2px;
+    color: #000000;
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    position: relative;
+}
+
+.nav-link:hover {
+    background: var(--color-primary-pale);
+    color: #000000;
+    border-left-color: var(--color-primary-light);
+    padding-left: 42px;
+}
+
+.nav-link.active {
+    background: var(--color-primary-pale);
+    color: #000000;
+    font-weight: 600;
+    border-left-color: var(--color-primary);
+}
+
+.nav-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.nav-link:hover i {
+    opacity: 1;
+}
+
+.nav-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: var(--space-8) var(--space-16);
+}
+
+.nav-group-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: var(--space-16) var(--space-20) var(--space-4);
+    margin-top: var(--space-4);
+}
+
+/* ส่วนท้ายของแถบเมนูด้านข้าง แสดงข้อมูลผู้ใช้งานปัจจุบัน */
+.sidebar-footer {
+    padding: var(--space-16) var(--space-20);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    background: var(--bg-surface);
+    text-align: center;
+}
+
+.user-info {
+    margin-bottom: var(--space-12);
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.text-caption {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* พื้นที่แสดงเนื้อหาหลักของหน้าเว็บ (Main Content) */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: var(--space-24);
+    min-height: 100vh;
+    transition: var(--transition);
+}
+
+/* ส่วนท้ายของเว็บไซต์ (Footer) สำหรับหน้าจอคอมพิวเตอร์ */
+.site-footer {
+    margin-left: var(--sidebar-width);
+    transition: var(--transition);
+}
+
+/* คอนเทนเนอร์จำกัดความกว้างและจัดกึ่งกลางเนื้อหา */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-16);
+}
+
+/* ป้ายแบนเนอร์ข้อความต้อนรับด้านบนสุดของหน้าหลัก */
+.banner-welcome {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 40%, #43A047 70%, #66BB6A 100%);
+    color: white;
+    padding: 50px 40px;
+    border-radius: var(--border-radius-lg);
+    text-align: center;
+    margin-bottom: var(--space-24);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.banner-welcome::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.banner-welcome::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.banner-welcome h1,
+.banner-welcome p,
+.banner-welcome a {
+    position: relative;
+    z-index: 1;
+}
+
+/* หัวข้อส่วนต่างๆ ของหน้าเว็บ (Section Title) */
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+/* ระบบกริด (Grid System) สำหรับแบ่งคอลัมน์ข้อมูล */
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-20);
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-20);
+}
+
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-20);
+}
+
+.grid-layout {
+    display: grid;
+}
+
+.grid-span-full {
+    grid-column: 1 / -1;
+}
+
+/* แถบหัวด้านบนสำหรับหน้าจอมือถือ (Mobile Header) */
+.mobile-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: white;
+    border-bottom: 2px solid var(--color-primary);
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    box-shadow: var(--shadow-sm);
+}
+
+.mobile-header-brand {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    letter-spacing: 0.3px;
+}
+
+.mobile-header-auth {
+    display: flex;
+    align-items: center;
+}
+
+.mobile-avatar-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #9E9E9E;
+    color: white;
+    border: none;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-login-btn {
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.hide-on-desktop {
+    display: none !important;
+}
+
+/* ปรับการแสดงผลสำหรับหน้าจอแท็บเล็ต (หน้าจอกว้างไม่เกิน 1024px) */
+@media (max-width: 1024px) {
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-layout {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ปรับการแสดงผลสำหรับหน้าจอมือถือและแท็บเล็ต (หน้าจอกว้างไม่เกิน 768px) */
+@media (max-width: 768px) {
+    .sidebar {
+        left: -300px;
+        transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: none;
+    }
+
+    .sidebar.active {
+        left: 0;
+        box-shadow: 8px 0 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: var(--space-16);
+    }
+
+    .site-footer {
+        margin-left: 0 !important;
+    }
+
+    .mobile-header, 
+    header.mobile-header.hide-on-desktop {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .hide-on-desktop {
+        display: block !important;
+    }
+
+    .hide-on-mobile {
+        display: none !important;
+    }
+
+    /* ปุ่มปิด sidebar ใน mobile ต้องแสดงเป็น flex */
+    button.hide-on-desktop {
+        display: inline-flex !important;
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .d-flex.gap-3.flex-wrap,
+    .d-flex.gap-2.flex-wrap {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 600px) {
+
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: 1fr;
+    }
+
+    .banner-welcome {
+        padding: 30px 20px;
+    }
+
+    .main-content {
+        padding: var(--space-12);
+        padding-top: var(--space-8);
+    }
+
+    .section-title {
+        font-size: 17px;
+    }
+}
+
+/* แผ่นฟิล์มสีทึบพื้นหลังเมื่อเปิดเมนูบนมือถือ (Sidebar Overlay) */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    filter: blur(2px);
+}
+
+.sidebar-overlay.active {
+    display: block;
+}

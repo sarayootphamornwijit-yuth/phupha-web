@@ -1,34 +1,47 @@
-<!DOCTYPE html>
-<html lang="th">
+<?php
+// about.php
+// ไฟล์นี้ทำหน้าที่แสดงหน้า "เกี่ยวกับเรา" ของชมรมเพื่อนภูผา
+// ทุกคนสามารถเข้าชมได้โดยไม่ต้องล็อกอิน
 
-<head>
-    <meta charset="UTF-8">
-    <title>เกี่ยวกับเรา - ชมรมเพื่อนภูผา</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+require_once 'config/database.php';
 
-<body>
-    <?php include 'header.php'; ?>
+// โหลด Header ซึ่งรวม navigation bar และ HTML head
+include 'includes/header.php';
+?>
 
-    <div class="container" style="max-width: 800px; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 15px rgba(0,0,0,0.05);">
-        <h1 class="main-title" style="text-align: left; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">ประวัติความเป็นมา</h1>
+<div class="container py-4" style="max-width: 800px;">
 
-        <p style="margin-bottom: 20px; text-indent: 50px;">
-            ชมรมเพื่อนภูผาก่อตั้งขึ้นในปี พ.ศ. 2555 จากกลุ่มนักศึกษาที่ต้องการเรียนรู้วิถีชุมชนและพัฒนาโรงเรียนในพื้นที่ห่างไกล โดยเริ่มจากการรวมกลุ่มเล็กๆ เพื่อมอบสิ่งของบนดอยสูง จนได้รับการจดทะเบียนเป็นชมรมอย่างเป็นทางการเพื่อดำเนินกิจกรรมเพื่อสังคมอย่างต่อเนื่อง
-        </p>
+    <!-- ส่วนหัวของหน้า -->
+    <div class="text-center mb-4">
+        <h1 class="text-main m-0">เกี่ยวกับเรา</h1>
+    </div>
 
-        <h3 style="margin-bottom: 10px; color: #2c3e50;">เป้าหมายและพันธกิจ</h3>
-        <ul style="margin-left: 20px; margin-bottom: 30px;">
-            <li>ส่งเสริมให้นักศึกษามีจิตสาธารณะ เสียสละเพื่อส่วนรวม</li>
-            <li>สร้างเครือข่ายอาสาพัฒนา เพื่อลดความเหลื่อมล้ำทางการศึกษา</li>
-            <li>แลกเปลี่ยนวัฒนธรรมชุมชน และส่งเสริมการอนุรักษ์ธรรมชาติ</li>
-        </ul>
+    <!-- การ์ดแสดงข้อมูลชมรม -->
+    <div class="card text-center p-4">
 
-        <h3 style="margin-bottom: 10px; color: #2c3e50;">นิยามคำว่า "เพื่อนภูผา"</h3>
-        <p>
-            คำว่า "ภูผา" สื่อถึงความท้าทายที่เราพร้อมก้าวผ่านไปพร้อมกับ "เพื่อน" การเข้าร่วมชมรมไม่จำเป็นต้องมีทักษะพิเศษ ขอเพียงมีความตั้งใจที่จะช่วยเหลือและแบ่งปัน เพื่อสร้างรอยยิ้มและเก็บเกี่ยวประสบการณ์ที่มีคุณค่า
+        <!-- โลโก้ชมรม -->
+        <img
+            class="object-contain mx-auto mb-4"
+            src="assets/images/logo.png"
+            style="height: 120px; width: 120px;"
+            alt="โลโก้ชมรมเพื่อนภูผา"
+        >
+
+        <!-- ชื่อชมรม -->
+        <h2 class="text-main mb-3">ชมรมเพื่อนภูผา</h2>
+
+        <!-- รายละเอียดเกี่ยวกับชมรม -->
+        <p class="text-muted text-md m-0" style="line-height: 1.8;">
+            เราคือองค์กรที่มุ่งเน้นการสร้างสรรค์กิจกรรมจิตอาสาเพื่อสังคม
+            ไม่ว่าจะเป็นการพัฒนาชุมชน, การอนุรักษ์สิ่งแวดล้อม, และการศึกษา<br>
+
+            แพลตฟอร์มนี้สร้างขึ้นเพื่ออำนวยความสะดวกในการจัดการสมาชิก
+            การลงทะเบียนกิจกรรม และการสะสมแต้มจิตอาสา<br>
+
+            เพื่อให้ทุกคนสามารถเข้าถึงและร่วมเป็นส่วนหนึ่งในการทำความดีได้อย่างง่ายดาย
         </p>
     </div>
-</body>
 
-</html>
+</div>
+
+<?php include 'includes/footer.php'; ?>

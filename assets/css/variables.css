@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* ตัวแปรสีธีมหลัก: โทนเขียวธรรมชาติ ชมรมเพื่อนภูผา */
+    --color-primary: #2E7D32;          /* เขียวมรกต (Emerald Green) */
+    --color-primary-dark: #1B5E20;     /* เขียวเข้ม (Forest Green) */
+    --color-primary-light: #4CAF50;    /* เขียวสดใส */
+    --color-primary-pale: #E8F5E9;     /* เขียวอ่อนมาก (background) */
+    --color-primary-rgb: 46, 125, 50;  /* สำหรับ rgba() */
+
+    --color-secondary: #00695C;        /* เขียวเทา (Teal) สำหรับ accent */
+    --color-secondary-light: #26A69A;  /* เขียวเทาอ่อน */
+
+    --color-success: #43A047;          /* เขียวสำเร็จ */
+    --color-warning: #F9A825;          /* เหลืองเตือน */
+    --color-danger: #E53935;           /* แดงอันตราย */
+    --color-info: #0288D1;             /* น้ำเงินข้อมูล */
+
+    /* สีพื้นหลังสำหรับส่วนต่างๆ ของหน้าเว็บ */
+    --bg-main: #F1F8E9;               /* พื้นหลังหลัก — เขียวอ่อนละมุน */
+    --bg-surface: #FFFFFF;             /* พื้นหลัง card/surface */
+    --bg-sidebar: linear-gradient(180deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%);
+
+    /* โทนสีข้อความหลัก ข้อความรอง และสีตัวอักษรบนปุ่ม */
+    --text-main: #000000;             /* ข้อความหลัก */
+    --text-muted: #000000;            /* ข้อความรอง */
+    --text-light: #000000;            /* ข้อความอ่อนมาก / borders */
+    --text-white: #FFFFFF;
+
+    /* ขนาดระยะห่าง Spacing สำหรับจัดระยะขอบและช่องว่าง */
+    --space-4: 4px;
+    --space-8: 8px;
+    --space-12: 12px;
+    --space-16: 16px;
+    --space-20: 20px;
+    --space-24: 24px;
+    --space-32: 32px;
+
+    /* รูปแบบเส้นขอบและรัศมีความโค้งมนของมุมกล่อง */
+    --border-radius: 12px;
+    --border-radius-sm: 8px;
+    --border-radius-lg: 16px;
+    --border-radius-xl: 24px;
+    --border-color: #E2E8F0;
+
+    /* ระดับเงาตกกระทบสำหรับกล่องข้อมูลและการ์ด */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.1);
+
+    /* ระยะเวลาแอนิเมชันสำหรับเอฟเฟกต์การเปลี่ยนแปลง */
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease;
+    --transition-slow: all 0.5s ease;
+
+    /* มิติขนาดโครงสร้างหลัก เมนูด้านข้างและความสูงแถบหัว */
+    --sidebar-width: 270px;
+    --header-height: 60px;
+}
+
+/* รีเซ็ตค่าเริ่มต้นและกำหนดรูปแบบพื้นฐานของแท็ก HTML */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Prompt', sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none !important;
+    transition: none !important;
+}
+
+a:hover {
+    text-decoration: none !important;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}

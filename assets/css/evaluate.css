@@ -1,0 +1,28 @@
+/* ซ่อน Input Radio ตัวจริง */
+.rating-group input {
+    display: none;
+}
+
+/* จัดเรียงดาวแบบจากขวาไปซ้าย เพื่อให้เวลา Hover มันติดดวงซ้ายมาด้วย */
+.rating-group {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+}
+
+/* สไตล์ของดาวเริ่มต้น (สีเทา) */
+.rating-group label {
+    color: var(--text-light);
+    font-size: 35px;
+    padding: 0 5px;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+}
+
+/* สีของดาวเวลากดเลือกแล้ว หรือเวลาเอาเมาส์ชี้ */
+.rating-group label:hover,
+.rating-group label:hover~label,
+.rating-group input:checked~label {
+    color: var(--color-warning);
+    transform: scale(1.15);
+}

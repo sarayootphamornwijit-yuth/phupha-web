@@ -1,0 +1,207 @@
+/* กำหนดขนาดกระดาษพิมพ์ A4 แนวนอน (Landscape) ที่ระดับ Root */
+@page {
+    size: A4 landscape;
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #525659;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Taviraj', serif;
+}
+
+.cert-container {
+    width: 297mm;
+    height: 195mm;
+    max-height: 195mm;
+    background: #fffdf8;
+    padding: 5mm 8mm;
+    box-sizing: border-box;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    overflow: hidden;
+}
+
+.cert-border {
+    border: 8px double #b8860b;
+    padding: 10px 16px;
+    height: 100%;
+    box-sizing: border-box;
+    position: relative;
+    background-image: radial-gradient(#f5f5dc 1px, transparent 1px);
+    background-size: 30px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cert-border::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    border: 1px solid #d4af37;
+    pointer-events: none;
+}
+
+.logo {
+    margin: 0 auto 3px auto;
+}
+
+.logo img {
+    width: 75px;
+    height: auto;
+}
+
+.title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #b8860b;
+    margin: 2px 0 4px 0;
+    letter-spacing: 2px;
+    line-height: 1.2;
+}
+
+.subtitle {
+    font-size: 21px;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.name {
+    font-size: 44px;
+    font-weight: 600;
+    color: #000;
+    margin: 2px auto 6px auto;
+    position: relative;
+    display: inline-block;
+    padding: 0 30px 6px 30px;
+    line-height: 1.2;
+}
+
+.name::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #b8860b, transparent);
+}
+
+.desc {
+    font-size: 19px;
+    color: #222;
+    line-height: 1.55;
+    max-width: 860px;
+    margin: 2px auto 8px auto;
+    font-weight: 300;
+}
+
+.cert-issue-date {
+    font-size: 18px;
+    color: #333;
+    margin: 8px auto 4px auto;
+    font-weight: 400;
+}
+
+.cert-ref {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 auto 12px auto;
+    letter-spacing: 1px;
+}
+
+.footer-sig {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    margin-top: 12px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.sig-box {
+    text-align: center;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.sig-line {
+    width: 240px;
+    border-bottom: 1px dashed #555;
+    margin: 0 auto 6px auto;
+}
+
+.sig-text,
+.cert-date {
+    font-size: 17px;
+    color: #333;
+}
+
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 0;
+    }
+
+    html, body {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 297mm !important;
+        max-height: 210mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .print-toolbar {
+        display: none !important;
+    }
+
+    .cert-container {
+        box-shadow: none !important;
+        width: 285mm !important;
+        height: 195mm !important;
+        max-width: 285mm !important;
+        max-height: 195mm !important;
+        margin: auto !important;
+        padding: 4mm 6mm !important;
+        box-sizing: border-box !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        break-after: avoid !important;
+        overflow: hidden !important;
+    }
+
+    .cert-border {
+        height: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .footer-sig, .sig-box {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+}

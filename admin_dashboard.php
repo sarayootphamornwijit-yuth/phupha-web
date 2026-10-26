@@ -1,279 +1,183 @@
 <?php
-session_start();
-include 'db.php';
+// admin_dashboard.php
+// ไฟล์นี้ทำหน้าที่แสดง Dashboard ภาพรวมระบบสำหรับ Admin
+// แสดงสถิติสำคัญ เช่น จำนวนสมาชิก, กิจกรรม, แต้มสะสม
+// และ Chart แสดงข้อมูลเชิงสถิติ
 
-// ดักจับ: ถ้าไม่ใช่ Admin ห้ามเข้าหน้านี้เด็ดขาด!
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    echo "<script>alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้!'); window.location.href='index.php';</script>";
-    exit();
+require_once 'config/database.php';
+
+
+// ส่วนที่ 1 ตรวจสอบสิทธิ์ Admin
+if (!isLoggedIn() || getCurrentUserRole() !== 'admin') {
+    header("Location: index.php");
+    exit;
 }
 
-$msg = "";
-
-// 1. ระบบจัดการเมื่อ Admin กดเพิ่มกิจกรรมใหม่
-if (isset($_POST['add_activity'])) {
-    $title = $conn->real_escape_string($_POST['title']);
-    $description = $conn->real_escape_string($_POST['description']);
-    $act_date = $_POST['act_date'];
-    $location = $conn->real_escape_string($_POST['location']);
-    $type = $_POST['type'];
-
-    // หากระบบของคุณมีการอัปโหลดรูปภาพด้วย ให้นำโค้ดอัปโหลดมาแทรกตรงนี้ได้เลยครับ
-    $sql = "INSERT INTO activities (title, description, act_date, location, type) VALUES ('$title', '$description', '$act_date', '$location', '$type')";
-
-    if ($conn->query($sql) === TRUE) {
-        $msg = "<div class='alert-success'>เพิ่มกิจกรรมสำเร็จแล้ว!</div>";
-    } else {
-        $msg = "<div class='alert-danger'>เกิดข้อผิดพลาด: " . $conn->error . "</div>";
-    }
+// ส่วนประมวลผลการปรับปรุงเกณฑ์คะแนนจิตอาสา (POST)
+$successMessage = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_cert_threshold') {
+    verifyCsrfToken();
+    $newThreshold = (int)($_POST['point_threshold'] ?? 50);
+    setCertificatePointThreshold($newThreshold);
+    $successMessage = 'บันทึกเกณฑ์คะแนนจิตอาสาเรียบร้อยแล้ว';
 }
 
-// 2. ระบบจัดการเมื่อ Admin กดลบกิจกรรม
-if (isset($_GET['delete_id'])) {
-    $delete_id = intval($_GET['delete_id']);
-    if ($conn->query("DELETE FROM activities WHERE id = $delete_id")) {
-        $msg = "<div class='alert-success'>ลบกิจกรรมเรียบร้อยแล้ว!</div>";
-    } else {
-        $msg = "<div class='alert-danger'>ไม่สามารถลบได้: " . $conn->error . "</div>";
-    }
+$certThreshold = getCertificatePointThreshold();
+
+
+// ส่วนที่ 2 ดึงสถิติภาพรวม
+// จำนวนสมาชิกทั้งหมด
+$totalUsers = $conn->query("SELECT COUNT(*) as total FROM users")->fetch_assoc()['total'];
+
+// จำนวนกิจกรรมทั้งหมด
+$totalActivities = $conn->query("SELECT COUNT(*) as total FROM activities")->fetch_assoc()['total'];
+
+
+// จำนวนสมาชิกใหม่ในเดือนนี้
+$newUsersThisMonth = $conn->query(
+    "SELECT COUNT(*) as total FROM users
+     WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
+     AND YEAR(created_at) = YEAR(CURRENT_DATE())"
+)->fetch_assoc()['total'];
+
+
+// ส่วนที่ 3 ดึงข้อมูล Chart สถานะกิจกรรม
+// แสดงจำนวนกิจกรรมแยกตาม approval_status
+$activityStatusQuery = $conn->query(
+    "SELECT approval_status as status_type, COUNT(*) as count
+     FROM activities
+     GROUP BY approval_status"
+);
+
+$chartStatusLabels = [];
+$chartStatusCounts = [];
+
+while ($statusRow = $activityStatusQuery->fetch_assoc()) {
+    $labelText = $statusRow['status_type'] ? $statusRow['status_type'] : 'ไม่ระบุ';
+    $chartStatusLabels[] = $labelText;
+    $chartStatusCounts[] = $statusRow['count'];
 }
 
-// 3. ระบบจัดการเมื่อ Admin กดบันทึกการแก้ไขกิจกรรม
-if (isset($_POST['update_activity'])) {
-    $id = intval($_POST['activity_id']);
-    $title = $conn->real_escape_string($_POST['title']);
-    $description = $conn->real_escape_string($_POST['description']);
-    $act_date = $_POST['act_date'];
-    $location = $conn->real_escape_string($_POST['location']);
-    $type = $_POST['type'];
 
-    $sql = "UPDATE activities SET title='$title', description='$description', act_date='$act_date', location='$location', type='$type' WHERE id=$id";
-    if ($conn->query($sql) === TRUE) {
-        $msg = "<div class='alert-success'>อัปเดตแก้ไขข้อมูลกิจกรรมสำเร็จ!</div>";
-    } else {
-        $msg = "<div class='alert-danger'>แก้ไขล้มเหลว: " . $conn->error . "</div>";
-    }
-}
+// ส่วนที่ 4 ดึงข้อมูล Chart ระดับการมีส่วนร่วม
+// แบ่งสมาชิกเป็น 3 กลุ่ม ตามจำนวนกิจกรรมที่เข้าร่วม
 
-// ดึงข้อมูลกิจกรรมที่ต้องการแก้ไขมาใส่ในฟอร์ม (ถ้ามีการกดปุ่มแก้ไข)
-$edit_data = null;
-if (isset($_GET['edit_id'])) {
-    $edit_id = intval($_GET['edit_id']);
-    $res = $conn->query("SELECT * FROM activities WHERE id = $edit_id");
-    if ($res->num_rows > 0) {
-        $edit_data = $res->fetch_assoc();
-    }
-}
+// กลุ่ม Active: เข้าร่วมมากกว่า 3 กิจกรรม
+$activeUsersCount = $conn->query(
+    "SELECT COUNT(*) as total FROM (
+         SELECT user_id, COUNT(*) as activity_count
+         FROM user_activities
+         GROUP BY user_id
+         HAVING activity_count > 3
+     ) active_subquery"
+)->fetch_assoc()['total'];
+
+// กลุ่ม Regular: เข้าร่วม 1-3 กิจกรรม
+$regularUsersCount = $conn->query(
+    "SELECT COUNT(*) as total FROM (
+         SELECT user_id, COUNT(*) as activity_count
+         FROM user_activities
+         GROUP BY user_id
+         HAVING activity_count BETWEEN 1 AND 3
+     ) regular_subquery"
+)->fetch_assoc()['total'];
+
+// กลุ่ม Inactive: ไม่เคยเข้าร่วมกิจกรรมเลย
+$inactiveUsersCount = $totalUsers - $activeUsersCount - $regularUsersCount;
+
+
+// ส่วนที่ 5 เตรียม JSON สำหรับส่งให้ JavaScript
+$chartDataJson = json_encode([
+    'status_labels' => $chartStatusLabels,
+    'status_counts' => $chartStatusCounts,
+    'engagement'    => [$activeUsersCount, $regularUsersCount, $inactiveUsersCount],
+]);
+
+
+// ส่วนที่ 6 โหลด Header
+include 'includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="th">
+<div class="container py-4">
 
-<head>
-    <meta charset="UTF-8">
-    <title>ระบบหลังบ้าน Admin - ชมรมเพื่อนภูผา</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+    <h2 class="section-title mb-4">แผงควบคุม</h2>
 
-<body>
-    <?php include 'header.php'; ?>
+<!-- Summary Cards: ตัวเลขสรุปสำคัญ -->
+    <div class="grid-3 mb-4">
 
-    <div class="container">
-        <h1 class="main-title">แผงควบคุมผู้ดูแลระบบ (Admin Dashboard)</h1>
-        <?php echo $msg; ?>
-
-        <div class="grid-3" style="grid-template-columns: 1fr 1fr; margin-bottom: 40px;">
-
-            <div class="content-panel">
-                <?php if ($edit_data): ?>
-                    <h3 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">แก้ไขข้อมูลกิจกรรม</h3>
-                    <form action="admin_dashboard.php" method="POST">
-                        <input type="hidden" name="activity_id" value="<?php echo $edit_data['id']; ?>">
-
-                        <div class="form-group">
-                            <label>ชื่อกิจกรรม</label>
-                            <input type="text" name="title" class="form-control" value="<?php echo htmlspecialchars($edit_data['title']); ?>" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>ประเภทกิจกรรม</label>
-                            <select name="type" class="form-control" required>
-                                <option value="new" <?php echo $edit_data['type'] == 'new' ? 'selected' : ''; ?>>กิจกรรมใหม่ (เปิดให้นักศึกษาสมัคร)</option>
-                                <option value="past" <?php echo $edit_data['type'] == 'past' ? 'selected' : ''; ?>>กิจกรรมที่ผ่านมา</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>รายละเอียดกิจกรรม</label>
-                            <textarea name="description" class="form-control" rows="4" required><?php echo htmlspecialchars($edit_data['description']); ?></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label>วันที่จัดกิจกรรม</label>
-                            <input type="date" name="act_date" class="form-control" value="<?php echo $edit_data['act_date']; ?>" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>สถานที่</label>
-                            <input type="text" name="location" class="form-control" value="<?php echo htmlspecialchars($edit_data['location']); ?>" required>
-                        </div>
-
-                        <button type="submit" name="update_activity" class="btn-block">บันทึกการแก้ไข</button>
-                        <a href="admin_dashboard.php" style="display:block; text-align:center; margin-top:15px; color:#64748b; text-decoration:none; font-size:14px;">ยกเลิกการแก้ไข</a>
-                    </form>
-                <?php else: ?>
-                    <h3 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">เพิ่มกิจกรรมของชมรม</h3>
-                    <form action="" method="POST">
-                        <div class="form-group">
-                            <label>ชื่อกิจกรรม</label>
-                            <input type="text" name="title" class="form-control" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>ประเภทกิจกรรม</label>
-                            <select name="type" class="form-control" required>
-                                <option value="new">กิจกรรมใหม่ (เปิดให้นักศึกษาสมัคร)</option>
-                                <option value="past">กิจกรรมที่ผ่านมา (โชว์อัลบั้มรูป)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>รายละเอียดกิจกรรม</label>
-                            <textarea name="description" class="form-control" rows="4" required></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label>วันที่จัดกิจกรรม</label>
-                            <input type="date" name="act_date" class="form-control" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>สถานที่</label>
-                            <input type="text" name="location" class="form-control" required>
-                        </div>
-
-                        <button type="submit" name="add_activity" class="btn-block">ประกาศกิจกรรม</button>
-                    </form>
-                <?php endif; ?>
-            </div>
-
-            <div class="content-panel">
-                <?php if ($edit_data): ?>
-                    <h3 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">รายชื่อผู้สมัคร (กิจกรรมที่กำลังแก้ไข)</h3>
-
-                    <?php
-                    $act_id = $edit_data['id'];
-                    $users_reg = $conn->query("SELECT u.student_id, u.fullname, u.faculty FROM activity_registrations r JOIN users u ON r.student_id = u.student_id WHERE r.activity_id = $act_id");
-                    $total_users = $users_reg->num_rows;
-
-                    echo "<h4 style='color: var(--primary-color); margin-top:15px; background: #f8fafc; padding:15px; border-radius: 8px; border: 1px solid #e2e8f0; display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;'>";
-                    echo "<span style='flex: 1 1 200px; font-size: 16px; font-weight: 500;'>กิจกรรม: " . htmlspecialchars($edit_data['title']) . "</span>";
-
-                    echo "<div style='display:flex; gap:8px; flex-wrap:wrap;'>";
-                    echo "<span style='font-size:13px; background:#3b82f6; color:white; padding:6px 12px; border-radius:6px; white-space:nowrap;'>ยอดผู้สมัคร: " . $total_users . " คน</span>";
-                    echo "<a href='print_roster.php?act_id=" . $act_id . "' target='_blank' style='font-size:13px; background:#10b981; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; white-space:nowrap; transition: 0.2s;'>พิมพ์รายชื่อ</a>";
-                    echo "</div>";
-                    echo "</h4>";
-
-                    // แสดงตารางรายชื่อเฉพาะกิจกรรมที่ถูกเลือก
-                    if ($total_users > 0) {
-                        echo "<table class='admin-table'>";
-                        echo "<tr><th style='width:50px; text-align:center;'>ลำดับ</th><th>รหัส นศ.</th><th>ชื่อ-นามสกุล</th><th>คณะ/สาขา</th></tr>";
-                        $i = 1;
-                        while ($user = $users_reg->fetch_assoc()) {
-                            echo "<tr>";
-                            echo "<td style='text-align:center; font-weight:500; color:#64748b;'>" . $i . "</td>";
-                            echo "<td>" . htmlspecialchars($user['student_id']) . "</td>";
-                            echo "<td>" . htmlspecialchars($user['fullname']) . "</td>";
-                            echo "<td>" . htmlspecialchars($user['faculty']) . "</td>";
-                            echo "</tr>";
-                            $i++;
-                        }
-                        echo "</table>";
-                    } else {
-                        echo "<p style='color:#94a3b8; font-size:14px; padding:15px 0;'>ยังไม่มีนักศึกษาสมัครกิจกรรมนี้</p>";
-                    }
-                    ?>
-
-                <?php else: ?>
-                    <h3 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">สรุปยอดผู้สมัครกิจกรรมใหม่</h3>
-
-                    <?php
-                    $activities_new = $conn->query("SELECT * FROM activities WHERE type='new' ORDER BY id DESC");
-
-                    if ($activities_new->num_rows > 0) {
-                        while ($act = $activities_new->fetch_assoc()) {
-                            $act_id = $act['id'];
-
-                            // นับยอดเท่านั้น ไม่ต้องดึงข้อมูลชื่อ-นามสกุล เพื่อประหยัดการทำงานของฐานข้อมูล
-                            $count_query = $conn->query("SELECT id FROM activity_registrations WHERE activity_id = $act_id");
-                            $total_users = $count_query->num_rows;
-
-                            echo "<h4 style='color: var(--primary-color); margin-top:15px; background: #f8fafc; padding:15px; border-radius: 8px; border: 1px solid #e2e8f0; display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;'>";
-                            echo "<span style='flex: 1 1 200px; font-size: 16px; font-weight: 500;'>กิจกรรม: " . htmlspecialchars($act['title']) . "</span>";
-
-                            echo "<div style='display:flex; gap:8px; flex-wrap:wrap;'>";
-                            echo "<span style='font-size:13px; background:#3b82f6; color:white; padding:6px 12px; border-radius:6px; white-space:nowrap;'>ยอดผู้สมัคร: " . $total_users . " คน</span>";
-                            echo "<a href='print_roster.php?act_id=" . $act_id . "' target='_blank' style='font-size:13px; background:#10b981; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; white-space:nowrap; transition: 0.2s;'>พิมพ์รายชื่อ</a>";
-                            echo "</div>";
-                            echo "</h4>";
-                            // เราตัดลูปสร้าง <table> ทิ้งไปสำหรับส่วนนี้ ทำให้มันโชว์แค่บล็อกสรุปครับ
-                        }
-                    } else {
-                        echo "<p style='color:#94a3b8; font-size:14px; margin-top:15px;'>ไม่มีกิจกรรมใหม่</p>";
-                    }
-                    ?>
-                <?php endif; ?>
-            </div>
+        <div class="card text-center">
+            <h3 class="text-muted text-sm m-0 font-weight-medium">สมาชิก</h3>
+            <div class="text-xl font-weight-bold text-main mt-1"><?= number_format($totalUsers) ?></div>
         </div>
 
-        <div class="content-panel">
-            <h3 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">รายการกิจกรรมทั้งหมดในระบบ</h3>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>วันที่จัดงาน</th>
-                        <th>ชื่อกิจกรรม</th>
-                        <th>สถานที่</th>
-                        <th>ประเภท</th>
-                        <th style="text-align: center; width: 150px;">การจัดการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $all_act = $conn->query("SELECT * FROM activities ORDER BY act_date DESC");
-                    if ($all_act->num_rows > 0) {
-                        while ($row = $all_act->fetch_assoc()) {
-                    ?>
-                            <tr>
-                                <td><?php echo $row['act_date']; ?></td>
-                                <td><strong><?php echo htmlspecialchars($row['title']); ?></strong></td>
-                                <td><?php echo htmlspecialchars($row['location']); ?></td>
-                                <td>
-                                    <?php
-                                    if ($row['type'] == 'new') {
-                                        echo "<span style='color:#10b981; font-weight:500;'>กิจกรรมใหม่</span>";
-                                    } else {
-                                        echo "<span style='color:#64748b; font-weight:500;'>กิจกรรมที่ผ่านมา</span>";
-                                    }
-                                    ?>
-                                </td>
-                                <td style="text-align: center; white-space: nowrap;">
-                                    <a href="admin_dashboard.php?edit_id=<?php echo $row['id']; ?>" class="btn-sm-blue" style="margin-right:5px;">แก้ไข</a>
-                                    <a href="admin_dashboard.php?delete_id=<?php echo $row['id']; ?>" onclick="return confirm('คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้? ข้อมูลนักศึกษาที่สมัครจะถูกลบไปด้วย')" class="btn-sm-red">ลบ</a>
-                                </td>
-                            </tr>
-                    <?php
-                        }
-                    } else {
-                        echo "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>ไม่มีข้อมูลกิจกรรมในระบบ</td></tr>";
-                    }
-                    ?>
-                </tbody>
-            </table>
+        <div class="card text-center">
+            <h3 class="text-muted text-sm m-0 font-weight-medium">จำนวนกิจกรรม</h3>
+            <div class="text-xl font-weight-bold text-main mt-1"><?= number_format($totalActivities) ?></div>
+        </div>
+
+        <div class="card text-center">
+            <h3 class="text-muted text-sm m-0 font-weight-medium">สมาชิกใหม่ (เดือนนี้)</h3>
+            <div class="text-xl font-weight-bold text-main mt-1"><?= number_format($newUsersThisMonth) ?></div>
         </div>
 
     </div>
-</body>
 
-</html>
+    <!-- แสดงข้อความแจ้งเตือนเมื่อบันทึกเกณฑ์คะแนนสำเร็จ -->
+    <?php if ($successMessage !== ''): ?>
+        <div class="alert alert-success text-center mb-3">
+            <?= htmlspecialchars($successMessage) ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- ส่วนแก้ไขเกณฑ์คะแนนจิตอาสาสำหรับรับเกียรติบัตร -->
+    <div class="card p-3 mb-4">
+        <h3 class="text-md m-0 mb-2">เกณฑ์คะแนนจิตอาสาสำหรับรับเกียรติบัตร</h3>
+        <p class="text-sm text-muted mb-2">กำหนดคะแนนสะสมขั้นต่ำที่สมาชิกต้องมีเพื่อรับสิทธิ์ดาวน์โหลดเกียรติบัตร</p>
+        <form action="admin_dashboard.php" method="POST" class="d-flex align-center gap-2 flex-wrap">
+            <?php csrfField(); ?>
+            <input type="hidden" name="action" value="update_cert_threshold">
+            <label for="point_threshold" class="text-sm">เกณฑ์คะแนนสะสมขั้นต่ำ:</label>
+            <input type="number" name="point_threshold" id="point_threshold" class="form-control" value="<?= $certThreshold ?>" min="1" style="max-width: 120px;" required>
+            <span class="text-sm">คะแนน</span>
+            <button type="submit" class="btn btn-primary">บันทึกเกณฑ์คะแนน</button>
+        </form>
+    </div>
+
+<!-- Charts: กราฟสถิติ -->
+    <div class="grid-2 gap-4">
+
+        <!-- กราฟสถานะกิจกรรม -->
+        <div class="card">
+            <h3 class="text-md text-center text-primary mb-3">สถิติการจัดกิจกรรมตามสถานะ</h3>
+            <div class="position-relative w-100" style="height: 250px;">
+                <canvas id="typeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- กราฟระดับการมีส่วนร่วมของสมาชิก -->
+        <div class="card">
+            <h3 class="text-md text-center text-primary mb-3">สถิติระดับการมีส่วนร่วมของสมาชิก</h3>
+            <div class="position-relative w-100" style="height: 250px;">
+                <canvas id="engageChart"></canvas>
+            </div>
+            <div class="text-xs text-muted text-center mt-3">
+                * มาก (>3 ครั้ง), ปานกลาง (1-3 ครั้ง), น้อย (0 ครั้ง)
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ส่ง JSON ข้อมูลให้ JavaScript สร้าง Chart -->
+    <script id="dashboardData" type="application/json">
+        <?= $chartDataJson ?>
+    </script>
+
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- JavaScript สำหรับวาด Chart -->
+<script src="assets/js/dashboard.js"></script>
+
+<?php include 'includes/footer.php'; ?>
