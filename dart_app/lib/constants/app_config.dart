@@ -1,0 +1,33 @@
+// app_config.dart
+// กำหนดค่าคอนฟิกพื้นฐานสำหรับการเชื่อมต่อ API และไฟล์ของระบบชมรมเพื่อนภูผา
+class AppConfig {
+  // ชื่อของแอพพลิเคชัน
+  static const String appName = 'ชมรมเพื่อนภูผา';
+  static const String universityName = 'มหาวิทยาลัยราชภัฏเชียงใหม่';
+
+  // ที่อยู่เซิร์ฟเวอร์ Backend สำหรับการเชื่อมต่อ API
+  // ใช้งานโฮสติ้งจริง: InfinityFree (phuphaclub.ct.ws)
+  // หากต้องการสลับเป็น Localhost ให้ใช้: 'http://localhost/phupha-club/Web%20Code'
+  static String baseUrl = 'https://phuphaclub.ct.ws';
+
+  // URL สำหรับเรียกใช้งานไฟล์ API หลัก
+  static String get apiUrl => '$baseUrl/api.php';
+
+  // URL สำหรับแสดงผลรูปภาพที่อัปโหลดไว้บนเซิร์ฟเวอร์
+  static String get uploadsUrl => '$baseUrl/uploads';
+
+  // ฟังก์ชันช่วยสร้าง URL เต็มสำหรับรูปภาพ
+  static String getFullImageUrl(String? relativePath) {
+    if (relativePath == null || relativePath.isEmpty) {
+      return '';
+    }
+    if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+      return relativePath;
+    }
+    // หากขึ้นต้นด้วย uploads/ ให้ต่อกับ baseUrl ได้โดยตรง
+    if (relativePath.startsWith('uploads/')) {
+      return '$baseUrl/$relativePath';
+    }
+    return '$uploadsUrl/$relativePath';
+  }
+}

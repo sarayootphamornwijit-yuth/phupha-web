@@ -1,7 +1,27 @@
-# Environment / OS
+# System & Editor
 .DS_Store
 Thumbs.db
 *.log
+.idea/
+.vscode/
+*.iml
 
-# Sensitive credentials template (if needed)
-# config/database.local.php
+# Non-code assets / archives
+*.zip
+what i do/
+รูปเว็บหน้าจอเล็ก/
+*หน้าจอเล็ก*/
+
+# Flutter / Dart ignores
+dart_app/.dart_tool/
+dart_app/.flutter-plugins-dependencies
+dart_app/.pub-cache/
+dart_app/.pub/
+dart_app/build/
+dart_app/.idea/
+dart_app/*.iml
+dart_app/android/app/debug/
+dart_app/android/app/profile/
+dart_app/android/app/release/
+dart_app/ios/Flutter/.last_build_id
+dart_app/**/doc/api/

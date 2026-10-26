@@ -1,0 +1,7 @@
+# Environment / OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Sensitive credentials template (if needed)
+# config/database.local.php
