@@ -211,22 +211,22 @@ include 'includes/header.php';
                 1. สรุปสถิติผู้เข้าร่วมกิจกรรม
             </h3>
 
-            <div class="grid-3 gap-3 text-center">
-                <div class="p-3 bg-main rounded border">
-                    <div class="text-xs" style="color: #000;">จำนวนคนลงทะเบียนทั้งหมด</div>
-                    <div class="text-lg font-weight-bold mt-1" style="color: #000;">
+            <div class="grid-3 gap-3 text-left">
+                <div class="p-3 bg-main rounded border text-left">
+                    <div class="text-xs" style="color: #64748b;">จำนวนคนลงทะเบียนทั้งหมด</div>
+                    <div class="text-lg font-weight-bold mt-1" style="color: #0f172a;">
                         <?= number_format($participantStats['total_registered']) ?> คน
                     </div>
                 </div>
-                <div class="p-3 bg-main rounded border">
-                    <div class="text-xs" style="color: #000;">เช็คอินกิจกรรมแล้ว</div>
-                    <div class="text-lg font-weight-bold mt-1" style="color: #000;">
+                <div class="p-3 bg-main rounded border text-left">
+                    <div class="text-xs" style="color: #64748b;">เช็คอินกิจกรรมแล้ว</div>
+                    <div class="text-lg font-weight-bold mt-1" style="color: #16a34a;">
                         <?= number_format($participantStats['checked_in']) ?> คน
                     </div>
                 </div>
-                <div class="p-3 bg-main rounded border">
-                    <div class="text-xs" style="color: #000;">ยังไม่ได้เช็คอินกิจกรรมนี้</div>
-                    <div class="text-lg font-weight-bold mt-1" style="color: #000;">
+                <div class="p-3 bg-main rounded border text-left">
+                    <div class="text-xs" style="color: #64748b;">ยังไม่ได้เช็คอินกิจกรรมนี้</div>
+                    <div class="text-lg font-weight-bold mt-1" style="color: #dc2626;">
                         <?= number_format($participantStats['absent']) ?> คน
                     </div>
                 </div>
@@ -234,21 +234,21 @@ include 'includes/header.php';
         </div>
 
         <!-- 2. สรุปรูปแบบการเดินทาง -->
-        <div class="card p-4 mb-4">
-            <h3 class="text-md m-0 mb-3 pb-2 border-bottom" style="font-weight: 600; color: #000;">
+        <div class="card p-4 mb-4 text-left">
+            <h3 class="text-md m-0 mb-3 pb-2 border-bottom text-left" style="font-weight: 600; color: #000;">
                 2. สรุปรูปแบบการเดินทาง
             </h3>
 
-            <div class="grid-2 gap-3 mb-4 text-center">
-                <div class="p-3 bg-main rounded border">
-                    <div class="text-xs" style="color: #000;">เดินทางด้วยตนเอง</div>
-                    <div class="text-lg font-weight-bold mt-1" style="color: #000;">
+            <div class="grid-2 gap-3 mb-4 text-left">
+                <div class="p-3 bg-main rounded border text-left">
+                    <div class="text-xs" style="color: #64748b;">เดินทางด้วยตนเอง</div>
+                    <div class="text-lg font-weight-bold mt-1" style="color: #0f172a;">
                         <?= number_format($travelStats['own_travel']) ?> คน
                     </div>
                 </div>
-                <div class="p-3 bg-main rounded border">
-                    <div class="text-xs" style="color: #000;">เดินทางโดยรถของชมรม</div>
-                    <div class="text-lg font-weight-bold mt-1" style="color: #000;">
+                <div class="p-3 bg-main rounded border text-left">
+                    <div class="text-xs" style="color: #64748b;">เดินทางโดยรถของชมรม</div>
+                    <div class="text-lg font-weight-bold mt-1" style="color: #0f172a;">
                         <?= number_format($travelStats['club_vehicle']) ?> คน
                     </div>
                 </div>

@@ -275,11 +275,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       faculty: _userType == 'student' ? _selectedFacultyName : null,
       major: _userType == 'student' ? _selectedMajorName : null,
       academicYear: _userType == 'student' ? _selectedAcademicYear : null,
-      role: _userType == 'student' ? _userLevel : 'member',
+      // บังคับให้ผู้สมัครใหม่เริ่มต้นด้วยสิทธิ์ 'member' เสมอ เพื่อความปลอดภัย
+      role: 'member',
       committeePosition: (_userType == 'student' && _userLevel == 'committee')
           ? _selectedCommitteePosition
           : null,
     );
+
 
     if (!mounted) return;
 
@@ -728,10 +730,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       });
                                     },
                                   ),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    '* บัญชีใหม่จะได้รับสิทธิ์เป็นสมาชิกทั่วไปก่อน โดยผู้ดูแลระบบจะเป็นผู้อนุมัติสิทธิ์คณะกรรมการตามตำแหน่งให้ในภายหลัง',
+                                    style: TextStyle(fontSize: 11.5, color: Color(0xFFD97706), fontStyle: FontStyle.italic),
+                                  ),
                                 ],
                               ],
                             ),
                           ),
+
                           const SizedBox(height: 20),
                         ],
 

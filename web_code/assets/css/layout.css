@@ -352,6 +352,28 @@
     .d-flex.gap-2.flex-wrap {
         flex-direction: column;
     }
+
+    /* แก้ปัญหาเนื้อหาชิดขวาเมื่อหน้าจอย่อเป็นแท็บเล็ต/มือถือ (flex-direction: column ทำให้ align-end ผลักเนื้อหาไปชิดขวา) */
+    .d-flex.gap-3.flex-wrap.align-end,
+    .d-flex.gap-2.flex-wrap.align-end,
+    .d-flex.align-end.flex-wrap,
+    form.d-flex.align-end {
+        align-items: stretch !important;
+    }
+
+    .d-flex.gap-3.flex-wrap > .flex-grow-1,
+    .d-flex.gap-2.flex-wrap > .flex-grow-1,
+    .d-flex.align-end.flex-wrap > .flex-grow-1,
+    form.d-flex.align-end > .flex-grow-1,
+    form.d-flex.align-end > div {
+        width: 100% !important;
+    }
+
+    /* ปุ่มในฟอร์มตัวกรองบนจอแท็บเล็ต จัดชิดซ้ายเรียบร้อย */
+    form.d-flex.align-end > button,
+    form.d-flex.align-end > .btn {
+        align-self: flex-start;
+    }
 }
 
 @media (max-width: 600px) {
@@ -372,6 +394,14 @@
 
     .section-title {
         font-size: 17px;
+    }
+
+    /* บนจอมือถือขนาดเล็ก ปรับให้ปุ่มค้นหา/เรียกดูข้อมูลยืดเต็มความกว้างเพื่อกดได้สะดวก */
+    form.d-flex.align-end > button,
+    form.d-flex.align-end > .btn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
     }
 }
 

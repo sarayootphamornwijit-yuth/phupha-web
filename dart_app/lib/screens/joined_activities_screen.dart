@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../models/activity_model.dart';
 import '../models/user_model.dart';
@@ -97,6 +98,173 @@ class _JoinedActivitiesScreenState extends State<JoinedActivitiesScreen> {
         SnackBar(content: Text(response.message), backgroundColor: AppColors.danger),
       );
     }
+  }
+
+  // แสดง Modal คิวอาร์โค้ดเช็คอินกิจกรรม (ขนาดพอดีขอบเขต รหัสกระชับ ไม่ล้น)
+  void _showQrModal(ActivityModel activity) {
+    if (_currentUser == null) return;
+    final userId = _currentUser!.userId;
+    final rawQrData = 'checkin-$userId-${activity.activityId}';
+    final shortDisplayCode = 'CHK-ACT${activity.activityId}-U$userId';
+    final qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=4&data=$rawQrData';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.all(20),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.primaryPale,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.qr_code_2, color: AppColors.primary, size: 22),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'คิวอาร์โค้ดเช็คอิน',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // ชื่อกิจกรรมและผู้เข้าร่วม (ชิดซ้าย)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activity.title,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'ผู้เข้าร่วม: ${_currentUser?.name ?? "สมาชิกชมรม"}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // กล่อง QR Code ที่กำหนดขอบเขตแน่นอน (190x190) ไม่ล้นกรอบ
+            Container(
+              width: 190,
+              height: 190,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid, width: 1.5),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  qrImageUrl,
+                  width: 170,
+                  height: 170,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.broken_image, color: Colors.grey, size: 36),
+                        SizedBox(height: 6),
+                        Text('โหลด QR ไม่สำเร็จ', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // รหัสเช็คอินแบบกระชับ และปุ่มคัดลอก
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('รหัสเช็คอิน:', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                        Text(
+                          shortDisplayCode,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: rawQrData));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('คัดลอกรหัสเช็คอินเรียบร้อยแล้ว'),
+                          duration: Duration(seconds: 2),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy, size: 14),
+                    label: const Text('คัดลอก', style: TextStyle(fontSize: 11)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF64748B),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('ปิดหน้าต่าง'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -237,9 +405,22 @@ class _JoinedActivitiesScreenState extends State<JoinedActivitiesScreen> {
                                       child: const Text('รายละเอียด'),
                                     ),
 
+                                    // ปุ่มแสดง QR Code เช็คอิน (เฉพาะสถานะ registered)
+                                    if (act.userStatus == 'registered')
+                                      ElevatedButton.icon(
+                                        onPressed: () => _showQrModal(act),
+                                        icon: const Icon(Icons.qr_code, size: 16),
+                                        label: const Text('คิวอาร์โค้ดเช็คอิน'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                      ),
+
                                     // ปุ่มเลือกยานพาหนะ (เฉพาะสถานะ registered)
                                     if (act.userStatus == 'registered')
-                                      ElevatedButton(
+                                      OutlinedButton(
                                         onPressed: () {
                                           Navigator.push(
                                             context,
@@ -251,9 +432,9 @@ class _JoinedActivitiesScreenState extends State<JoinedActivitiesScreen> {
                                             ),
                                           ).then((_) => _fetchJoinedActivities());
                                         },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
-                                          foregroundColor: Colors.white,
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.primary,
+                                          side: const BorderSide(color: AppColors.primary),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                         ),
                                         child: const Text('เลือกการเดินทาง'),

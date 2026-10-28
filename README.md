@@ -8,14 +8,14 @@
 
 โครงการนี้ประกอบด้วย 2 ส่วนหลัก:
 
-1. **`Web Code/`** : ระบบเว็บไซต์ชมรมเพื่อนภูผา (Web Application)
+1. **`web_code/`** : ระบบเว็บไซต์ชมรมเพื่อนภูผา (Web Application)
    - พัฒนาด้วย: PHP (Native / PDO / MySQLi), MySQL, HTML5, Vanilla CSS, JavaScript
    - ฟีเจอร์หลัก:
      - ระบบบริหารจัดการชมรม (ERP Activities, Vehicles, Budgets, Reports)
      - ระบบสมัครสมาชิก เข้าสู่ระบบ จัดการโปรไฟล์ และทำเนียบคณะกรรมการ
      - ระบบลงทะเบียนเข้าร่วมกิจกรรม และเช็คชื่อผ่าน QR Code
      - ระบบประเมินกิจกรรมและออกเกียรติบัตรอัตโนมัติ (Certificate System)
-     - ระบบ API ([Web Code/api.php](Web%20Code/api.php)) เชื่อมต่อกับแอปพลิเคชันมือถือ
+     - ระบบ API ([web_code/api.php](web_code/api.php)) เชื่อมต่อกับแอปพลิเคชันมือถือ
 
 2. **`dart_app/`** : แอปพลิเคชันมือถือชมรมเพื่อนภูผา (Mobile Application)
    - พัฒนาด้วย: Flutter / Dart (Cross-Platform Android & iOS)

@@ -49,7 +49,17 @@
 
         if (elems.title) elems.title.textContent = actTitle;
         if (elems.user) elems.user.textContent = 'ผู้เข้าร่วม: ' + userName;
-        if (elems.codeText) elems.codeText.textContent = qrCodeData;
+        
+        // จัดการแสดงรหัสย่อที่เข้าใจง่ายและไม่ล้นกรอบ
+        let shortCode = qrCodeData;
+        const codeParts = qrCodeData.split('-');
+        if (codeParts.length >= 3) {
+            shortCode = `CHK-ACT${codeParts[2]}-U${codeParts[1]}`;
+        }
+        if (elems.codeText) {
+            elems.codeText.textContent = shortCode;
+            elems.codeText.dataset.raw = qrCodeData;
+        }
 
         // ล็อค scroll พื้นหลังและแสดง Modal
         elems.modal.style.display = 'flex';
@@ -65,52 +75,72 @@
 
         if (!container) return;
 
-        // วิธีที่ 1: ใช้ QRCode.js สร้าง Local Canvas/SVG ในเครื่องโดยตรง (เร็วที่สุด ทำงานได้แม้ออฟไลน์)
+        const QR_SIZE = 160;
+        container.innerHTML = '';
+
+        // วิธีที่ 1: ใช้ QRCode.js สร้าง Local Canvas ในเครื่องโดยตรง (ขนาดพอดี 160px อยู่ในเส้นประ)
         if (typeof QRCode !== 'undefined') {
             try {
                 if (loading) loading.style.display = 'none';
-                container.innerHTML = '';
+
                 new QRCode(container, {
                     text: data,
-                    width: 220,
-                    height: 220,
+                    width: QR_SIZE,
+                    height: QR_SIZE,
                     colorDark: '#0f172a',
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.M
                 });
 
-                // ตกแต่ง Canvas/Image ที่ถูกสร้างขึ้นมาให้กึ่งกลาง
-                setTimeout(() => {
-                    const canvasOrImg = container.querySelector('canvas, img');
-                    if (canvasOrImg) {
-                        canvasOrImg.style.display = 'block';
-                        canvasOrImg.style.margin = '0 auto';
-                        canvasOrImg.style.borderRadius = '8px';
+                // ฟังก์ชันจัดระเบียบองค์ประกอบ: ลบ img ที่ qrcode.js สร้างซ้ำออก และล็อกขนาด canvas ให้พอดี
+                const cleanupAndResize = () => {
+                    const canvases = container.querySelectorAll('canvas');
+                    const imgs = container.querySelectorAll('img');
+
+                    if (canvases.length > 0 && imgs.length > 0) {
+                        // qrcode.js สร้างทั้ง canvas และ img ซ้ำกัน ให้ลบ img ออกเหลือเฉพาะ canvas ชิ้นเดียว
+                        imgs.forEach(i => i.remove());
                     }
-                }, 10);
+
+                    const activeElem = container.querySelector('canvas') || container.querySelector('img');
+                    if (activeElem) {
+                        activeElem.style.width = QR_SIZE + 'px';
+                        activeElem.style.height = QR_SIZE + 'px';
+                        activeElem.style.maxWidth = QR_SIZE + 'px';
+                        activeElem.style.maxHeight = QR_SIZE + 'px';
+                        activeElem.style.display = 'block';
+                        activeElem.style.margin = '0 auto';
+                        activeElem.style.borderRadius = '8px';
+                    }
+                };
+
+                cleanupAndResize();
+                setTimeout(cleanupAndResize, 20);
+                setTimeout(cleanupAndResize, 80);
                 return;
             } catch (err) {
-                console.warn('QRCode.js rendering error, falling back to image APIs:', err);
+                console.warn('QRCode.js error, falling back to online image API:', err);
             }
         }
 
-        // วิธีที่ 2: Multi-tier Fallback ไปยัง Online API พร้อม Loading State
+        // วิธีที่ 2: Multi-tier Fallback ไปยัง Online API พร้อม Loading State (สร้างเพียงภาพเดียว)
         if (loading) loading.style.display = 'flex';
         container.innerHTML = '';
 
         const img = document.createElement('img');
-        img.id = 'modalQrImage';
         img.alt = 'QR Code เช็คอิน';
-        img.style.width = '220px';
-        img.style.height = '220px';
+        img.style.width = QR_SIZE + 'px';
+        img.style.height = QR_SIZE + 'px';
+        img.style.maxWidth = QR_SIZE + 'px';
+        img.style.maxHeight = QR_SIZE + 'px';
         img.style.display = 'block';
         img.style.margin = '0 auto';
         img.style.borderRadius = '8px';
 
         const providers = [
-            `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(data)}`,
-            `https://quickchart.io/qr?size=260&text=${encodeURIComponent(data)}`,
-            `https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=${encodeURIComponent(data)}`
+            `https://api.qrserver.com/v1/create-qr-code/?size=${QR_SIZE}x${QR_SIZE}&margin=2&data=${encodeURIComponent(data)}`,
+            `https://quickchart.io/qr?size=${QR_SIZE}&text=${encodeURIComponent(data)}`,
+            `https://chart.googleapis.com/chart?chs=${QR_SIZE}x${QR_SIZE}&cht=qr&chl=${encodeURIComponent(data)}`
         ];
 
         let providerIndex = 0;
@@ -177,7 +207,7 @@
             if (copyBtn) {
                 e.preventDefault();
                 const codeText = document.getElementById('modalQrCodeText');
-                const code = codeText ? codeText.textContent.trim() : '';
+                const code = codeText ? (codeText.dataset.raw || codeText.textContent.trim()) : '';
                 if (!code || code === '-') return;
 
                 if (navigator.clipboard && navigator.clipboard.writeText) {

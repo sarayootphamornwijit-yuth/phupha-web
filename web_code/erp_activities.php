@@ -490,19 +490,32 @@ include 'includes/header.php';
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="form-label">ผู้ประสานงานฝ่ายสถานที่ / โครงการ (ถ้ามี)</label>
+                        <label class="form-label">ผู้ประสานงานโครงการ (ฝ่ายประชาสัมพันธ์)</label>
                         <select name="venue_contact_user_id" class="form-control">
                             <option value="0">ไม่ระบุ</option>
                             <?php
-                            // ดึงรายชื่อผู้ใช้ที่สามารถเป็นผู้ประสานงานได้ (นักศึกษาที่เป็นกรรมการ)
+                            // ดึงรายชื่อฝ่ายประชาสัมพันธ์สำหรับเป็นผู้ประสานงานโครงการ
                             $venueContactUsersResult = $conn->query(
-                                "SELECT user_id, name, phone FROM users WHERE role IN ('committee') AND user_type = 'student' ORDER BY name"
+                                "SELECT user_id, name, student_id, phone, committee_position 
+                                 FROM users 
+                                 WHERE committee_position = 'pr' 
+                                 ORDER BY student_id ASC, name ASC"
                             );
+                            if (!$venueContactUsersResult || $venueContactUsersResult->num_rows === 0) {
+                                $venueContactUsersResult = $conn->query(
+                                    "SELECT user_id, name, student_id, phone, committee_position 
+                                     FROM users 
+                                     WHERE role IN ('committee') 
+                                     ORDER BY student_id ASC, name ASC"
+                                );
+                            }
                             if ($venueContactUsersResult) {
                                 while ($vcUser = $venueContactUsersResult->fetch_assoc()) {
                                     $isSelected = (isset($activityToEditData['venue_contact_user_id']) && $activityToEditData['venue_contact_user_id'] == $vcUser['user_id']) ? 'selected' : '';
-                                    $phoneText  = $vcUser['phone'] ? '(' . $vcUser['phone'] . ')' : '';
-                                    echo "<option value=\"{$vcUser['user_id']}\" {$isSelected}>" . htmlspecialchars($vcUser['name']) . " {$phoneText}</option>";
+                                    $stdText = !empty($vcUser['student_id']) ? $vcUser['student_id'] . '  ' : '';
+                                    $phoneText = !empty($vcUser['phone']) ? ' เบอร์ ' . $vcUser['phone'] : '';
+                                    $optionLabel = htmlspecialchars("{$stdText}{$vcUser['name']}{$phoneText}");
+                                    echo "<option value=\"{$vcUser['user_id']}\" {$isSelected}>{$optionLabel}</option>";
                                 }
                             }
                             ?>
@@ -612,15 +625,31 @@ include 'includes/header.php';
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="form-label">ผู้ประสานงานฝ่ายสถานที่ (ถ้ามี)</label>
+                        <label class="form-label">ผู้ประสานงานโครงการ (ฝ่ายประชาสัมพันธ์)</label>
                         <select name="venue_contact_user_id" class="form-control">
                             <option value="0">ไม่ระบุ</option>
                             <?php
-                            $venueContactUsersResult = $conn->query("SELECT user_id, name, phone FROM users WHERE role IN ('committee') AND user_type = 'student' ORDER BY name");
+                            // ดึงรายชื่อฝ่ายประชาสัมพันธ์สำหรับเป็นผู้ประสานงานโครงการ
+                            $venueContactUsersResult = $conn->query(
+                                "SELECT user_id, name, student_id, phone, committee_position 
+                                 FROM users 
+                                 WHERE committee_position = 'pr' 
+                                 ORDER BY student_id ASC, name ASC"
+                            );
+                            if (!$venueContactUsersResult || $venueContactUsersResult->num_rows === 0) {
+                                $venueContactUsersResult = $conn->query(
+                                    "SELECT user_id, name, student_id, phone, committee_position 
+                                     FROM users 
+                                     WHERE role IN ('committee') 
+                                     ORDER BY student_id ASC, name ASC"
+                                );
+                            }
                             if ($venueContactUsersResult) {
                                 while ($vcUser = $venueContactUsersResult->fetch_assoc()) {
-                                    $phoneText = $vcUser['phone'] ? '(' . $vcUser['phone'] . ')' : '';
-                                    echo "<option value=\"{$vcUser['user_id']}\">" . htmlspecialchars($vcUser['name']) . " {$phoneText}</option>";
+                                    $stdText = !empty($vcUser['student_id']) ? $vcUser['student_id'] . '  ' : '';
+                                    $phoneText = !empty($vcUser['phone']) ? ' เบอร์ ' . $vcUser['phone'] : '';
+                                    $optionLabel = htmlspecialchars("{$stdText}{$vcUser['name']}{$phoneText}");
+                                    echo "<option value=\"{$vcUser['user_id']}\">{$optionLabel}</option>";
                                 }
                             }
                             ?>

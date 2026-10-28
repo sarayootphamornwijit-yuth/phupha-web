@@ -172,94 +172,104 @@ include 'includes/header.php';
 <?php endif; ?>
 
 <style>
-.card, .btn, .btn-primary, a.btn, a.btn-primary {
-    transition: none !important;
-    transform: none !important;
-    box-shadow: none !important;
-    color: #ffffff !important;
-    text-decoration: none !important;
+.advisor-action-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
 }
-.btn:hover, .btn-primary:hover, a.btn:hover, a.btn-primary:hover {
-    transition: none !important;
-    transform: none !important;
-    box-shadow: none !important;
-    color: #ffffff !important;
-    text-decoration: none !important;
+.advisor-action-btn.btn-approve {
+    background-color: #16a34a;
+    color: #ffffff;
+}
+.advisor-action-btn.btn-approve:hover {
+    background-color: #15803d;
+}
+.advisor-action-btn.btn-reject {
+    background-color: #dc2626;
+    color: #ffffff;
+}
+.advisor-action-btn.btn-reject:hover {
+    background-color: #b91c1c;
+}
+.advisor-action-btn.btn-view {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+.advisor-action-btn.btn-view:hover {
+    background-color: #e2e8f0;
 }
 </style>
 
 <div class="container py-4">
 
-    <h2 class="section-title mb-4">ระบบพิจารณาอนุมัติโครงการ</h2>
-
+    <h2 class="section-title mb-4 text-left">ระบบพิจารณาอนุมัติโครงการ</h2>
 
     <div class="grid-3 mb-4">
-        
-        <div class="card" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
-            <div class="text-sm font-weight-bold mb-1" style="color: #000;">โครงการรออนุมัติ</div>
-            <div class="text-xl font-weight-bold" style="color: #000;"><?= $statisticPendingCount ?> โครงการ</div>
+        <div class="card p-3 text-left" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
+            <div class="text-sm font-weight-bold mb-1" style="color: #64748b;">โครงการรออนุมัติ</div>
+            <div class="text-xl font-weight-bold" style="color: #d97706;"><?= $statisticPendingCount ?> โครงการ</div>
         </div>
 
-        <div class="card" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
-            <div class="text-sm font-weight-bold mb-1" style="color: #000;">อนุมัติแล้ว</div>
-            <div class="text-xl font-weight-bold" style="color: #000;"><?= $statisticApprovedCount ?> โครงการ</div>
+        <div class="card p-3 text-left" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
+            <div class="text-sm font-weight-bold mb-1" style="color: #64748b;">อนุมัติแล้ว</div>
+            <div class="text-xl font-weight-bold" style="color: #16a34a;"><?= $statisticApprovedCount ?> โครงการ</div>
         </div>
 
-        <div class="card" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
-            <div class="text-sm font-weight-bold mb-1" style="color: #000;">ไม่อนุมัติ / ยกเลิก</div>
-            <div class="text-xl font-weight-bold" style="color: #000;"><?= $statisticRejectedCount ?> โครงการ</div>
+        <div class="card p-3 text-left" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
+            <div class="text-sm font-weight-bold mb-1" style="color: #64748b;">ไม่อนุมัติ / ยกเลิก</div>
+            <div class="text-xl font-weight-bold" style="color: #dc2626;"><?= $statisticRejectedCount ?> โครงการ</div>
         </div>
-
     </div>
 
-
     <?php foreach ($allProjectList as $projectItem): ?>
-        <div class="card mb-3" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
-            <div class="d-flex justify-between align-center flex-wrap gap-2">
+        <div class="card mb-3 p-4 text-left" style="background: #ffffff; border: 1px solid var(--border-color); box-shadow: none;">
+            <div class="d-flex justify-between align-center flex-wrap gap-3">
 
-                
-                <div class="flex-grow-1">
-                    <h3 class="m-0 text-md font-weight-bold" style="color: #000;">
+                <div class="flex-grow-1 text-left">
+                    <h3 class="m-0 text-md font-weight-bold text-left" style="color: #0f172a;">
                         <?= htmlspecialchars($projectItem['title']) ?>
                     </h3>
                     
-                    <div class="text-sm text-muted mt-1">
+                    <div class="text-sm text-muted mt-1 text-left">
                         วันที่ <?= date('d/m/Y', strtotime($projectItem['start_date'])) ?> |
-                        สถานที่ <?= htmlspecialchars($projectItem['location_name']) ?>
+                        สถานที่: <?= htmlspecialchars($projectItem['location_name']) ?>
                     </div>
 
-                    
-                    <div class="d-flex gap-2 mt-2 align-center text-xs" style="color: #000;">
+                    <div class="d-flex gap-2 mt-2 align-center text-xs text-left" style="color: #334155;">
                         <?php if ($projectItem['approval_status'] == 'pending'): ?>
-                            <span>สถานะ: รออนุมัติกิจกรรม</span>
+                            <span class="badge badge-warning text-xs">รออนุมัติกิจกรรม</span>
                         <?php elseif ($projectItem['approval_status'] == 'approved'): ?>
-                            <span>สถานะ: อนุมัติแล้ว</span>
+                            <span class="badge badge-success text-xs">อนุมัติแล้ว</span>
                         <?php else: ?>
-                            <span>สถานะ: ไม่อนุมัติ / ยกเลิก</span>
+                            <span class="badge badge-danger text-xs">ไม่อนุมัติ / ยกเลิก</span>
                         <?php endif; ?>
 
-                        
                         <?php if ($projectItem['report_status'] === 'submitted'): ?>
-                            <span>(รอตรวจรายงานสรุป)</span>
+                            <span class="badge badge-warning text-xs">(รอตรวจรายงานสรุป)</span>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                
-                <div>
+                <div class="d-flex gap-2 flex-wrap align-center">
                     <?php if ($projectItem['approval_status'] === 'pending'): ?>
-                        <a href="activity_details.php?id=<?= $projectItem['activity_id'] ?>"
-                           class="btn"
-                           style="padding: 8px 16px; background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important; box-shadow: none !important; transition: none !important; transform: none !important;">
-                            รอการอนุมัติ
-                        </a>
-                    <?php else: ?>
-                        <a href="activity_details.php?id=<?= $projectItem['activity_id'] ?>"
-                           class="btn btn-primary"
-                           style="padding: 8px 16px; color: #ffffff !important; box-shadow: none !important; transition: none !important; transform: none !important;">
-                            ดูรายละเอียดกิจกรรม
-                        </a>
+                        <button type="button" class="advisor-action-btn btn-approve btn-action-approve" data-id="<?= $projectItem['activity_id'] ?>" data-action="approved">
+                            <i class="fa-solid fa-check"></i> อนุมัติ
+                        </button>
+                        <button type="button" class="advisor-action-btn btn-reject btn-action-approve" data-id="<?= $projectItem['activity_id'] ?>" data-action="rejected">
+                            <i class="fa-solid fa-xmark"></i> ไม่อนุมัติ
+                        </button>
                     <?php endif; ?>
+                    <a href="activity_details.php?id=<?= $projectItem['activity_id'] ?>" class="advisor-action-btn btn-view">
+                        <i class="fa-solid fa-eye"></i> ดูรายละเอียด
+                    </a>
                 </div>
 
             </div>

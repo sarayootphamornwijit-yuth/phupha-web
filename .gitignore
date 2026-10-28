@@ -8,6 +8,9 @@ Thumbs.db
 
 # Non-code assets / archives
 *.zip
+*.apk
+cloudflared.exe
+*.lock
 what i do/
 รูปเว็บหน้าจอเล็ก/
 *หน้าจอเล็ก*/

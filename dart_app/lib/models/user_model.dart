@@ -15,6 +15,7 @@ class UserModel {
   final String? profilePicture;
   final String? faculty;
   final String? major;
+  final String? committeePosition;
 
   UserModel({
     required this.userId,
@@ -29,6 +30,7 @@ class UserModel {
     this.profilePicture,
     this.faculty,
     this.major,
+    this.committeePosition,
   });
 
   // แปลงข้อมูลจาก JSON ที่ได้รับจาก API เป็น UserModel Object
@@ -46,6 +48,7 @@ class UserModel {
       profilePicture: json['profile_picture']?.toString() ?? json['image']?.toString(),
       faculty: json['faculty']?.toString(),
       major: json['major']?.toString(),
+      committeePosition: json['committee_position']?.toString(),
     );
   }
 
@@ -64,6 +67,8 @@ class UserModel {
       'profile_picture': profilePicture,
       'faculty': faculty,
       'major': major,
+      'committee_position': committeePosition,
     };
   }
+
 }

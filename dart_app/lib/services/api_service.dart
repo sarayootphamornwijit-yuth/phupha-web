@@ -539,4 +539,111 @@ class ApiService {
       return ApiResponse(isSuccess: false, message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     }
   }
+
+  // 15. ดึงรายชื่อทำเนียบผู้นำรุ่น คณะกรรมการชมรม (Get Committees)
+  static Future<ApiResponse<List<Map<String, dynamic>>>> getCommittees() async {
+    try {
+      final uri = Uri.parse('${AppConfig.apiUrl}?action=get_committees');
+      final response = await _get(uri);
+
+      if (!response.body.trim().startsWith('{')) {
+        return ApiResponse(isSuccess: false, message: 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง', data: []);
+      }
+
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      if (json['status'] == 'success' && json['data'] != null) {
+        final List<dynamic> list = json['data'];
+        final committees = list.map((item) => Map<String, dynamic>.from(item)).toList();
+        return ApiResponse(isSuccess: true, message: json['message'] ?? 'สำเร็จ', data: committees);
+      } else {
+        return ApiResponse(isSuccess: false, message: json['message'] ?? 'ไม่พบข้อมูลคณะกรรมการ', data: []);
+      }
+    } catch (e) {
+      return ApiResponse(isSuccess: false, message: 'เกิดข้อผิดพลาดในการดึงข้อมูลคณะกรรมการ', data: []);
+    }
+  }
+
+  // 16. อนุมัติหรือปฏิเสธกิจกรรมสำหรับอาจารย์ที่ปรึกษา (Advisor Approve Activity)
+  static Future<ApiResponse<void>> advisorApproveActivity({
+    required int activityId,
+    required int advisorId,
+    required String status, // 'approved' หรือ 'rejected'
+  }) async {
+    try {
+      final response = await _post(
+        Uri.parse(AppConfig.apiUrl),
+        {
+          'action': 'advisor_approve_activity',
+          'activity_id': activityId.toString(),
+          'advisor_id': advisorId.toString(),
+          'status': status,
+        },
+      );
+
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      if (json['status'] == 'success') {
+        return ApiResponse(isSuccess: true, message: json['message'] ?? 'บันทึกสถานะเรียบร้อยแล้ว');
+      } else {
+        return ApiResponse(isSuccess: false, message: json['message'] ?? 'ไม่สามารถบันทึกได้');
+      }
+    } catch (e) {
+      return ApiResponse(isSuccess: false, message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+    }
+  }
+
+  // 17. ดึงรายชื่อผู้ลงทะเบียนในกิจกรรม (Get Activity Participants)
+  static Future<ApiResponse<List<Map<String, dynamic>>>> getActivityParticipants(int activityId) async {
+    try {
+      final uri = Uri.parse('${AppConfig.apiUrl}?action=get_activity_participants&activity_id=$activityId');
+      final response = await _get(uri);
+
+      if (!response.body.trim().startsWith('{')) {
+        return ApiResponse(isSuccess: false, message: 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง', data: []);
+      }
+
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      if (json['status'] == 'success' && json['data'] != null) {
+        final List<dynamic> list = json['data'];
+        final participants = list.map((item) => Map<String, dynamic>.from(item)).toList();
+        return ApiResponse(isSuccess: true, message: json['message'] ?? 'สำเร็จ', data: participants);
+      } else {
+        return ApiResponse(isSuccess: false, message: json['message'] ?? 'ไม่พบผู้ลงทะเบียน', data: []);
+      }
+    } catch (e) {
+      return ApiResponse(isSuccess: false, message: 'เกิดข้อผิดพลาดในการดึงรายชื่อผู้ลงทะเบียน', data: []);
+    }
+  }
+
+  // 18. เช็คอินกิจกรรมด้วยรหัส QR หรือรหัสนักศึกษา (Check-in QR)
+  static Future<ApiResponse<Map<String, dynamic>>> checkinQr({
+    required String qrData,
+    int? activityId,
+  }) async {
+    try {
+      final body = <String, String>{
+        'action': 'checkin_qr',
+        'qr_data': qrData,
+      };
+      if (activityId != null && activityId > 0) {
+        body['activity_id'] = activityId.toString();
+      }
+
+      final response = await _post(Uri.parse(AppConfig.apiUrl), body);
+
+      if (!response.body.trim().startsWith('{')) {
+        return ApiResponse(isSuccess: false, message: 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง');
+      }
+
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      final isSuccess = json['status'] == 'success' || json['status'] == 'info';
+      final message = json['message'] ?? 'ดำเนินการเรียบร้อยแล้ว';
+      final data = json['data'] != null ? Map<String, dynamic>.from(json['data']) : null;
+
+      return ApiResponse(isSuccess: isSuccess, message: message, data: data);
+    } catch (e) {
+      return ApiResponse(isSuccess: false, message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+    }
+  }
 }
+
+

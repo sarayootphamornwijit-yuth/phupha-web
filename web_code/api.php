@@ -555,10 +555,37 @@ if ($action === 'get_majors') {
             $stmt->close();
         }
     }
-    sendResponse('success', 'ดึงข้อมูลสาขาวิชาสำเร็จ', $majors);
+// กรณีเรียกดูรายชื่อคณะกรรมการทำเนียบผู้นำรุ่น
+if ($action === 'get_committees') {
+    $stmt = $conn->prepare("
+        SELECT u.user_id, u.name, u.role, u.committee_position, u.academic_year, u.generation, 
+               u.image, u.phone, u.faculty, u.major, u.student_id
+        FROM users u 
+        WHERE u.role IN ('committee') 
+          AND u.user_type = 'student'
+          AND u.academic_year IS NOT NULL
+          AND u.academic_year BETWEEN 1 AND 4
+        ORDER BY u.academic_year ASC, 
+                 FIELD(u.committee_position, 'president', 'vice_president', 'treasurer', 
+                       'secretary_saluang', 'secretary_wiangbua', 'nurse', 'venue_coordinator', 'pr'),
+                 u.name ASC
+    ");
+    if ($stmt) {
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $committees = [];
+        while ($row = $result->fetch_assoc()) {
+            $committees[] = $row;
+        }
+        $stmt->close();
+        sendResponse('success', 'ดึงข้อมูลทำเนียบผู้นำรุ่นสำเร็จ', $committees);
+    } else {
+        sendResponse('error', 'ไม่สามารถดึงข้อมูลทำเนียบผู้นำรุ่นได้');
+    }
 }
 
 // กรณีสมัครสมาชิกใหม่
+
 if ($action === 'register') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -567,8 +594,18 @@ if ($action === 'register') {
     $studentId = trim($_POST['student_id'] ?? '');
     $occupation = trim($_POST['occupation'] ?? '');
     $academicYear = !empty($_POST['academic_year']) ? (int)$_POST['academic_year'] : null;
-    $userRole = $_POST['role'] ?? 'member';
-    $committeePosition = !empty($_POST['committee_position']) ? $_POST['committee_position'] : null;
+    // ผู้สมัครใหม่ทุกคนเริ่มต้นด้วยสิทธิ์ 'member' เสมอ เพื่อความปลอดภัย
+    // แต่สำหรับผู้ที่ระบุตำแหน่งกรรมการมา จะบันทึกตำแหน่งไว้เพื่อให้แอดมินเห็นในระบบ
+    $userRole = 'member';
+    $allowedPositions = [
+        'president', 'vice_president', 'treasurer', 
+        'secretary_saluang', 'secretary_wiangbua', 
+        'nurse', 'venue_coordinator', 'pr'
+    ];
+    $committeePosition = (!empty($_POST['committee_position']) && in_array($_POST['committee_position'], $allowedPositions, true)) 
+        ? $_POST['committee_position'] 
+        : null;
+
     $facultyId = !empty($_POST['faculty_id']) ? (int)$_POST['faculty_id'] : null;
     $majorId = !empty($_POST['major_id']) ? (int)$_POST['major_id'] : null;
     $faculty = trim($_POST['faculty'] ?? '');
@@ -634,6 +671,141 @@ if ($action === 'register') {
         sendResponse('success', 'สมัครสมาชิกสำเร็จ เข้าสู่ระบบได้ทันที');
     } else {
         sendResponse('error', 'เกิดข้อผิดพลาดในการสมัครสมาชิก กรุณาลองใหม่อีกครั้ง');
+    }
+}
+
+// กรณีอาจารย์ที่ปรึกษาพิจารณาอนุมัติหรือปฏิเสธโครงการ
+if ($action === 'advisor_approve_activity') {
+    $activityId = (int)($_POST['activity_id'] ?? 0);
+    $advisorId = (int)($_POST['advisor_id'] ?? 0);
+    $approvalStatus = trim($_POST['status'] ?? ''); // 'approved' หรือ 'rejected'
+
+    if ($activityId <= 0 || !in_array($approvalStatus, ['approved', 'rejected'])) {
+        sendResponse('error', 'ข้อมูลการอนุมัติไม่ถูกต้อง');
+    }
+
+    if ($approvalStatus === 'approved') {
+        $stmt = $conn->prepare("UPDATE activities SET approval_status = 'approved', advisor_id = ?, approved_at = NOW() WHERE activity_id = ?");
+        $stmt->bind_param("ii", $advisorId, $activityId);
+    } else {
+        $stmt = $conn->prepare("UPDATE activities SET approval_status = 'rejected', advisor_id = ?, approved_at = NULL WHERE activity_id = ?");
+        $stmt->bind_param("ii", $advisorId, $activityId);
+    }
+
+    if ($stmt->execute()) {
+        $stmt->close();
+        $msg = ($approvalStatus === 'approved') ? 'อนุมัติโครงการเรียบร้อยแล้ว' : 'ปฏิเสธโครงการเรียบร้อยแล้ว';
+        sendResponse('success', $msg, ['activity_id' => $activityId, 'status' => $approvalStatus]);
+    } else {
+        $stmt->close();
+        sendResponse('error', 'ไม่สามารถบันทึกสถานะการอนุมัติได้');
+    }
+}
+
+// กรณีดึงรายชื่อผู้ลงทะเบียน/ผู้เข้าร่วมกิจกรรม (สำหรับ ERP & คณะกรรมการ)
+if ($action === 'get_activity_participants') {
+    $activityId = (int)($_GET['activity_id'] ?? $_POST['activity_id'] ?? 0);
+
+    if ($activityId <= 0) {
+        sendResponse('error', 'ไม่พบรหัสกิจกรรม');
+    }
+
+    $stmt = $conn->prepare("
+        SELECT ua.user_activity_id, ua.user_id, ua.status, ua.travel_method, ua.check_in_time,
+               u.name, u.student_id, u.faculty, u.major, u.phone,
+               v.vehicle_type, v.license_plate
+        FROM user_activities ua
+        JOIN users u ON ua.user_id = u.user_id
+        LEFT JOIN vehicles v ON ua.vehicle_id = v.vehicle_id
+        WHERE ua.activity_id = ? AND ua.status != 'cancelled'
+        ORDER BY ua.user_activity_id ASC
+    ");
+    $stmt->bind_param("i", $activityId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $participants = [];
+    while ($row = $result->fetch_assoc()) {
+        $participants[] = $row;
+    }
+    $stmt->close();
+
+    sendResponse('success', 'ดึงรายชื่อผู้เข้าร่วมเรียบร้อยแล้ว', $participants);
+}
+
+// กรณีสแกนหรือกรอกรหัสเช็คอินกิจกรรม (สำหรับแอปพลิเคชันมือถือและระบบ ERP)
+if ($action === 'checkin_qr') {
+    $qrData = trim($_POST['qr_data'] ?? $_GET['qr_data'] ?? '');
+    $activityId = (int)($_POST['activity_id'] ?? $_GET['activity_id'] ?? 0);
+
+    $u_id = 0;
+    $a_id = 0;
+    $token = '';
+
+    if (preg_match('/checkin-(\d+)-(\d+)(?:-([a-zA-Z0-9]+))?/i', $qrData, $matches)) {
+        $u_id = (int)$matches[1];
+        $a_id = (int)$matches[2];
+        $token = $matches[3] ?? '';
+    } elseif (!empty($qrData) && $activityId > 0) {
+        // กรณีพิมพ์รหัสนักศึกษา หรือ username
+        $stmtUser = $conn->prepare("SELECT user_id FROM users WHERE student_id = ? OR username = ? LIMIT 1");
+        $stmtUser->bind_param("ss", $qrData, $qrData);
+        $stmtUser->execute();
+        $uRes = $stmtUser->get_result();
+        if ($uRow = $uRes->fetch_assoc()) {
+            $u_id = (int)$uRow['user_id'];
+            $a_id = $activityId;
+        }
+        $stmtUser->close();
+    }
+
+    if ($u_id <= 0 || $a_id <= 0) {
+        sendResponse('error', 'รูปแบบรหัสเช็คอินไม่ถูกต้อง หรือไม่พบข้อมูลกิจกรรม');
+    }
+
+    if (!empty($token) && function_exists('verifyQrToken') && !verifyQrToken($u_id, $a_id, $token)) {
+        sendResponse('error', 'รหัสตรวจสอบ QR Code ไม่ถูกต้อง');
+    }
+
+    $stmt_chk = $conn->prepare("
+        SELECT ua.status, u.name, u.student_id, a.title AS activity_title, a.points 
+        FROM user_activities ua
+        JOIN users u ON ua.user_id = u.user_id
+        JOIN activities a ON ua.activity_id = a.activity_id
+        WHERE ua.user_id = ? AND ua.activity_id = ?
+    ");
+    $stmt_chk->bind_param("ii", $u_id, $a_id);
+    $stmt_chk->execute();
+    $res_chk = $stmt_chk->get_result();
+
+    if ($res_chk && $res_chk->num_rows > 0) {
+        $memberData = $res_chk->fetch_assoc();
+        $status     = $memberData['status'];
+        $userName   = $memberData['name'];
+        $studentId  = $memberData['student_id'] ?: '-';
+        $actTitle   = $memberData['activity_title'];
+
+        if ($status === 'registered') {
+            $stmt_upd = $conn->prepare("UPDATE user_activities SET status = 'checked_in', check_in_time = NOW() WHERE user_id = ? AND activity_id = ?");
+            $stmt_upd->bind_param("ii", $u_id, $a_id);
+            $stmt_upd->execute();
+            $stmt_upd->close();
+
+            sendResponse('success', 'เช็คอินสำเร็จเรียบร้อยแล้ว', [
+                'user_name' => $userName,
+                'student_id' => $studentId,
+                'activity_title' => $actTitle,
+                'status' => 'checked_in'
+            ]);
+        } else {
+            sendResponse('info', "สมาชิก {$userName} ได้เช็คอินเข้าร่วมกิจกรรมนี้เรียบร้อยแล้ว", [
+                'user_name' => $userName,
+                'student_id' => $studentId,
+                'activity_title' => $actTitle,
+                'status' => $status
+            ]);
+        }
+    } else {
+        sendResponse('error', 'ไม่พบข้อมูลการลงทะเบียนสำหรับกิจกรรมนี้');
     }
 }
 

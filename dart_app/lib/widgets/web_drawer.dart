@@ -6,6 +6,19 @@ import '../screens/activities_screen.dart';
 import '../screens/joined_activities_screen.dart';
 import '../screens/certificates_screen.dart';
 import '../screens/self_checkin_screen.dart';
+import '../screens/committee_directory_screen.dart';
+import '../screens/about_screen.dart';
+import '../screens/contact_screen.dart';
+import '../screens/advisor_approval_screen.dart';
+import '../screens/advisor_members_screen.dart';
+import '../screens/advisor_news_screen.dart';
+import '../screens/qr_scanner_screen.dart';
+import '../screens/erp_activities_screen.dart';
+import '../screens/erp_budgets_screen.dart';
+import '../screens/erp_vehicles_screen.dart';
+import '../screens/erp_reports_screen.dart';
+
+
 
 // web_drawer.dart
 // เมนูด้านข้าง (Sidebar Drawer) ออกแบบตามแท็ก <aside class="sidebar"> ใน header.php ของเว็บ
@@ -62,7 +75,27 @@ class WebDrawer extends StatelessWidget {
     );
   }
 
+  // ตรวจสอบสิทธิ์การเข้าถึงเมนู ERP ของคณะกรรมการตาม committee_position
+
+  bool _canCommitteeAccess(String menu) {
+    if (currentUser?.role == 'admin') return true;
+    final pos = currentUser?.committeePosition;
+    // หากไม่ระบุตำแหน่ง ให้เปิดให้เข้าถึงเพื่ออำนวยความสะดวก
+    if (pos == null || pos.isEmpty) return true;
+    const map = {
+      'activities': ['president', 'vice_president', 'secretary_saluang', 'secretary_wiangbua'],
+      'budgets': ['president', 'vice_president', 'treasurer'],
+      'vehicles': ['president', 'vice_president', 'venue_coordinator'],
+      'reports': ['president', 'vice_president', 'secretary_saluang', 'secretary_wiangbua'],
+      'qr_scanner': ['president', 'vice_president', 'treasurer', 'secretary_saluang', 'secretary_wiangbua', 'nurse', 'venue_coordinator'],
+      'members': ['president', 'vice_president', 'secretary_saluang', 'secretary_wiangbua'],
+    };
+    if (!map.containsKey(menu)) return true;
+    return map[menu]!.contains(pos);
+  }
+
   @override
+
   Widget build(BuildContext context) {
     final isLoggedIn = currentUser != null;
     final isStudent = currentUser?.userType == 'student';
@@ -171,11 +204,7 @@ class WebDrawer extends StatelessWidget {
                     context: context,
                     title: 'กรรมการผู้นำรุ่น',
                     isActive: currentRoute == 'committee_directory',
-                    onTap: () => _showInfoDialog(
-                      context,
-                      'กรรมการผู้นำรุ่น',
-                      'รายนามคณะกรรมการผู้นำรุ่น ชมรมเพื่อนภูผา มหาวิทยาลัยราชภัฏเชียงใหม่ ประจำปีการศึกษา 2569',
-                    ),
+                    onTap: () => _navigateTo(context, const CommitteeDirectoryScreen()),
                   ),
 
                   // 9. เกี่ยวกับเรา
@@ -183,11 +212,7 @@ class WebDrawer extends StatelessWidget {
                     context: context,
                     title: 'เกี่ยวกับเรา',
                     isActive: currentRoute == 'about',
-                    onTap: () => _showInfoDialog(
-                      context,
-                      'เกี่ยวกับเรา',
-                      'ชมรมเพื่อนภูผา มหาวิทยาลัยราชภัฏเชียงใหม่ มุ่งมั่นส่งเสริมกิจกรรมจิตอาสา พัฒนาศักยภาพนักศึกษา และสร้างประโยชน์สุขแก่สังคมและชุมชน',
-                    ),
+                    onTap: () => _navigateTo(context, const AboutScreen()),
                   ),
 
                   // 10. ติดต่อเรา
@@ -195,15 +220,117 @@ class WebDrawer extends StatelessWidget {
                     context: context,
                     title: 'ติดต่อเรา',
                     isActive: currentRoute == 'contact',
-                    onTap: () => _showInfoDialog(
-                      context,
-                      'ติดต่อเรา',
-                      'ที่ตั้ง: อาคารกิจกรรมนักศึกษา มหาวิทยาลัยราชภัฏเชียงใหม่\nอีเมล: phuphaclub@cmru.ac.th',
-                    ),
+                    onTap: () => _navigateTo(context, const ContactScreen()),
                   ),
+
+                  // 11. ระบบจัดการองค์กร (ERP) สำหรับ คณะกรรมการ (Committee)
+                  if (currentUser?.role == 'committee' || currentUser?.role == 'leader') ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Divider(color: Color(0xFFE2E8F0), height: 1),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 20, top: 8, bottom: 6),
+                      child: Text(
+                        'ระบบจัดการองค์กร (ERP)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary, // สีเขียวหลักสำหรับคณะกรรมการ
+                        ),
+                      ),
+                    ),
+                    if (_canCommitteeAccess('members'))
+                      _buildMenuItem(
+                        context: context,
+                        title: 'ดูข้อมูลสมาชิก',
+                        isActive: currentRoute == 'advisor_members',
+                        onTap: () => _navigateTo(context, const AdvisorMembersScreen()),
+                      ),
+                    if (_canCommitteeAccess('qr_scanner'))
+                      _buildMenuItem(
+                        context: context,
+                        title: 'สแกนเช็คอินกิจกรรม',
+                        isActive: currentRoute == 'qr_scanner',
+                        onTap: () => _navigateTo(context, const QrScannerScreen()),
+                      ),
+                    if (_canCommitteeAccess('activities'))
+                      _buildMenuItem(
+                        context: context,
+                        title: 'จัดการกิจกรรม',
+                        isActive: currentRoute == 'erp_activities',
+                        onTap: () => _navigateTo(context, const ErpActivitiesScreen()),
+                      ),
+                    if (_canCommitteeAccess('budgets'))
+                      _buildMenuItem(
+                        context: context,
+                        title: 'บัญชีรายรับ-รายจ่าย',
+                        isActive: currentRoute == 'erp_budgets',
+                        onTap: () => _navigateTo(context, const ErpBudgetsScreen()),
+                      ),
+                    if (_canCommitteeAccess('vehicles'))
+                      _buildMenuItem(
+                        context: context,
+                        title: 'จัดการยานพาหนะ',
+                        isActive: currentRoute == 'erp_vehicles',
+                        onTap: () => _navigateTo(context, const ErpVehiclesScreen()),
+                      ),
+                    _buildMenuItem(
+                      context: context,
+                      title: 'จัดการข่าวประชาสัมพันธ์',
+                      isActive: currentRoute == 'advisor_news',
+                      onTap: () => _navigateTo(context, const AdvisorNewsScreen()),
+                    ),
+                    if (_canCommitteeAccess('reports'))
+                      _buildMenuItem(
+                        context: context,
+                        title: 'สรุปรายงานผล',
+                        isActive: currentRoute == 'erp_reports',
+                        onTap: () => _navigateTo(context, const ErpReportsScreen()),
+                      ),
+                  ],
+
+                  // 12. เมนูอาจารย์ที่ปรึกษา (แสดงเฉพาะผู้ใช้ที่มีสิทธิ์เป็น advisor)
+                  if (currentUser?.role == 'advisor') ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Divider(color: Color(0xFFE2E8F0), height: 1),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 20, top: 8, bottom: 6),
+                      child: Text(
+                        'เมนูอาจารย์ที่ปรึกษา',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6D28D9), // สีม่วงเข้มประจำตำแหน่งอาจารย์
+                        ),
+                      ),
+                    ),
+                    _buildMenuItem(
+                      context: context,
+                      title: 'ดูข้อมูลสมาชิก',
+                      isActive: currentRoute == 'advisor_members',
+                      onTap: () => _navigateTo(context, const AdvisorMembersScreen()),
+                    ),
+                    _buildMenuItem(
+                      context: context,
+                      title: 'อนุมัติกิจกรรม',
+                      isActive: currentRoute == 'advisor_approval',
+                      onTap: () => _navigateTo(context, const AdvisorApprovalScreen()),
+                    ),
+                    _buildMenuItem(
+                      context: context,
+                      title: 'จัดการข่าวประชาสัมพันธ์',
+                      isActive: currentRoute == 'advisor_news',
+                      onTap: () => _navigateTo(context, const AdvisorNewsScreen()),
+                    ),
+                  ],
                 ],
               ),
             ),
+
+
           ],
         ),
       ),

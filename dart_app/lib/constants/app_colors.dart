@@ -19,6 +19,8 @@ class AppColors {
   static const Color warning = Color(0xFFF9A825);       // รอตรวจสอบ / เตือน
   static const Color danger = Color(0xFFE53935);        // ยกเลิก / อันตราย
   static const Color info = Color(0xFF0288D1);          // ข้อมูล
+  static const Color advisorBadgeBg = Color(0xFFEDE9FE); // สีม่วงอ่อนสำหรับป้ายอาจารย์
+  static const Color advisorBadgeText = Color(0xFF6D28D9); // สีม่วงเข้มสำหรับตัวอักษรอาจารย์
 
   // สีพื้นหลัง
   static const Color bgMain = Color(0xFFF1F8E9);         // พื้นหลังหลัก (เขียวอ่อนละมุน)

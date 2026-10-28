@@ -341,34 +341,19 @@ include 'includes/header.php';
                         สามารถติดต่อฝ่ายประชาสัมพันธ์หรือผู้ประสานงานโครงการได้โดยตรงครับ
                     </p>
 
-                    <?php foreach ($contactPersonsList as $contactData): ?>
-                        <div class="mt-2 p-3 rounded" style="background: var(--bg-main);">
-                            <div class="font-weight-bold text-main mb-1">
-                                <?= htmlspecialchars($contactData['name']) ?>
-
-                                <?php
-                                if (!empty($activityRecord['venue_contact_user_id']) && $activityRecord['venue_contact_user_id'] != 0) {
-                                    $contactRoleText = 'ผู้ประสานงานโครงการ';
-                                } elseif ($contactData['committee_position'] === 'pr') {
-                                    $contactRoleText = 'ฝ่ายประชาสัมพันธ์';
-                                } else {
-                                    $contactRoleText = 'ผู้ดูแลระบบ';
-                                }
-                                ?>
-                                <span class="badge badge-surface text-xs ml-1">
-                                    <?= $contactRoleText ?>
-                                </span>
+                    <?php foreach ($contactPersonsList as $contactData): 
+                        $stdId = !empty($contactData['student_id']) ? htmlspecialchars($contactData['student_id']) . '&nbsp;&nbsp;' : '';
+                        $contactName = htmlspecialchars($contactData['name']);
+                        $phoneStr = !empty($contactData['phone']) ? ' เบอร์ ' . htmlspecialchars($contactData['phone']) : ' เบอร์ -';
+                        $contactRoleText = 'ผู้ประสานงานโครงการ (ฝ่ายประชาสัมพันธ์)';
+                    ?>
+                        <div class="mt-2 p-3 rounded d-flex justify-between align-center flex-wrap gap-2" style="background: var(--bg-main);">
+                            <div style="font-size: 14px; font-weight: normal; color: #0f172a;">
+                                <?= $stdId ?><?= $contactName ?><?= $phoneStr ?>
                             </div>
-
-                            <?php if (!empty($contactData['phone'])): ?>
-                                <div class="text-muted mb-1">
-                                    เบอร์โทรศัพท์: <?= htmlspecialchars($contactData['phone']) ?>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($contactData['student_id'])): ?>
-                                <div class="text-xs text-muted"><?= htmlspecialchars($contactData['student_id']) ?></div>
-                            <?php endif; ?>
+                            <span class="badge badge-surface" style="font-size: 14px; font-weight: normal; color: #475569; padding: 4px 10px;">
+                                <?= $contactRoleText ?>
+                            </span>
                         </div>
                     <?php endforeach; ?>
                 </div>

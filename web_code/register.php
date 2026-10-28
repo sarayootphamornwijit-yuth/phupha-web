@@ -47,10 +47,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $major            = null;
     $studentId        = null;
     $academicYear     = null;
-    // ผู้สมัครใหม่ทุกคนเริ่มต้นด้วย role เป็น 'member' และไม่มีตำแหน่งกรรมการ
-    // แอดมินจะเป็นผู้กำหนดสิทธิ์และตำแหน่งให้ในภายหลังผ่านระบบจัดการสมาชิก
+    // ผู้สมัครใหม่ทุกคนเริ่มต้นด้วยสิทธิ์ (role) เป็น 'member' เสมอ เพื่อความปลอดภัย
+    // แต่สำหรับนักศึกษาที่สมัครในฐานะคณะกรรมการ จะบันทึกตำแหน่ง (committee_position) ไว้ด้วยเพื่อให้แอดมินเห็นในระบบ
     $userRole          = 'member';
     $committeePosition = null;
+
+    $allowedPositions = [
+        'president', 'vice_president', 'treasurer', 
+        'secretary_saluang', 'secretary_wiangbua', 
+        'nurse', 'venue_coordinator', 'pr'
+    ];
+    if (!empty($_POST['committee_position']) && in_array($_POST['committee_position'], $allowedPositions, true)) {
+        $committeePosition = trim($_POST['committee_position']);
+    }
 
 // รับข้อมูลเพิ่มเติมตามประเภทผู้ใช้
     if ($userType === 'student') {

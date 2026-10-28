@@ -552,18 +552,64 @@ include 'includes/header.php';
             <div id="modalActivityTitle" style="font-weight:700; font-size:1.05rem; color:#0f172a; margin-bottom:4px; line-height:1.4;">ชื่อกิจกรรม</div>
             <div id="modalUserName" style="font-size:0.875rem; color:#64748b; margin-bottom:14px;">ผู้เข้าร่วม: -</div>
 
-            <div style="background:#f8fafc; border:2px dashed #cbd5e1; border-radius:12px; padding:16px; display:inline-block; margin-bottom:14px; position:relative; min-width:240px; min-height:240px;">
-                <div id="modalQrCanvasContainer" style="display:flex; justify-content:center; align-items:center; min-height:220px; min-width:220px;">
-                    <img id="modalQrImage" src="" alt="QR Code เช็คอิน" style="width:220px; height:220px; display:block; margin:0 auto; border-radius:8px;">
-                </div>
-                <div id="modalQrLoading" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.92); border-radius:12px; flex-direction:column; justify-content:center; align-items:center; gap:8px;">
+            <style>
+                #modalQrBox {
+                    background: #ffffff;
+                    border: 2px dashed #94a3b8;
+                    border-radius: 16px;
+                    width: 200px;
+                    height: 200px;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin: 0 auto 16px auto;
+                    position: relative;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                }
+                #modalQrCanvasContainer {
+                    width: 160px !important;
+                    height: 160px !important;
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    position: relative !important;
+                    overflow: hidden !important;
+                }
+                #modalQrCanvasContainer canvas,
+                #modalQrCanvasContainer img {
+                    width: 160px !important;
+                    height: 160px !important;
+                    max-width: 160px !important;
+                    max-height: 160px !important;
+                    display: block !important;
+                    margin: 0 auto !important;
+                    border-radius: 8px !important;
+                    box-sizing: border-box !important;
+                }
+                /* ป้องกัน qrcode.js แสดงผลทั้ง canvas และ img ซ้ำซ้อน 2 รูป */
+                #modalQrCanvasContainer canvas + img {
+                    display: none !important;
+                }
+                #modalQrCanvasContainer img + canvas {
+                    display: none !important;
+                }
+            </style>
+
+            <div id="modalQrBox">
+                <div id="modalQrCanvasContainer"></div>
+                <div id="modalQrLoading" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); border-radius:14px; flex-direction:column; justify-content:center; align-items:center; gap:8px;">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; color:var(--color-primary, #15803d);"></i>
                     <span style="font-size:0.85rem; color:#64748b; font-weight:500;">กำลังโหลด QR Code...</span>
                 </div>
             </div>
 
-            <div style="background:#f1f5f9; border-radius:8px; padding:8px 12px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                <code id="modalQrCodeText" style="font-size:0.85rem; color:#334155; word-break:break-all; font-weight:600;">-</code>
+            <div style="background:#f1f5f9; border-radius:8px; padding:8px 12px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:8px; text-align:left;">
+                <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">
+                    <span style="font-size:0.75rem; color:#64748b; display:block;">รหัสเช็คอิน:</span>
+                    <code id="modalQrCodeText" style="font-size:0.85rem; color:#1e293b; font-weight:700;">-</code>
+                </div>
                 <button type="button" id="copyCodeBtn" class="btn btn-surface text-xs py-1 px-2" style="white-space:nowrap;">
                     <i class="fa-regular fa-copy"></i> คัดลอก
                 </button>

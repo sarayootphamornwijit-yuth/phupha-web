@@ -313,9 +313,9 @@ $bodyHoverClass = $isAllowedHoverPage ? 'allow-btn-hover' : 'no-btn-hover';
                 </div>
             </div>
 
-            <!-- ปุ่มดาวน์โหลดแอพ แสดงเฉพาะหน้าจอมือถือ แทนที่โปรไฟล์ (ดาวน์โหลดไฟล์ APK ผ่าน Google Drive) -->
+            <!-- ปุ่มดาวน์โหลดแอพ แสดงเฉพาะหน้าจอมือถือ แทนที่โปรไฟล์ (ดาวน์โหลดไฟล์ APK ตรงจากเซิร์ฟเวอร์) -->
             <div class="hide-on-desktop app-download-btn-wrapper">
-                <a href="https://drive.google.com/file/d/1yfx4nmxeO2YhI-gAWMH5ZWRsx0OLZd5T/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block" style="font-size:14px;padding:10px 14px;">
+                <a href="download_app.php" class="btn btn-primary btn-block" style="font-size:14px;padding:10px 14px;">
                     <i class="fa-solid fa-download"></i> ดาวน์โหลดแอพ
                 </a>
             </div>
@@ -362,9 +362,9 @@ $bodyHoverClass = $isAllowedHoverPage ? 'allow-btn-hover' : 'no-btn-hover';
                 </div>
             </div>
 
-            <!-- ปุ่มดาวน์โหลดแอพ แสดงเฉพาะหน้าจอมือถือ (ดาวน์โหลดไฟล์ APK ผ่าน Google Drive) -->
+            <!-- ปุ่มดาวน์โหลดแอพ แสดงเฉพาะหน้าจอมือถือ (ดาวน์โหลดไฟล์ APK ตรงจากเซิร์ฟเวอร์) -->
             <div class="hide-on-desktop app-download-btn-wrapper">
-                <a href="https://drive.google.com/file/d/1yfx4nmxeO2YhI-gAWMH5ZWRsx0OLZd5T/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block" style="font-size:14px;padding:10px 14px;">
+                <a href="download_app.php" class="btn btn-primary btn-block" style="font-size:14px;padding:10px 14px;">
                     <i class="fa-solid fa-download"></i> ดาวน์โหลดแอพ
                 </a>
             </div>

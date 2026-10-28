@@ -27,6 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 inputId.name = 'activity_id';
                 inputId.value = activityId;
 
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                if (csrfMeta) {
+                    const inputCsrf = document.createElement('input');
+                    inputCsrf.type = 'hidden';
+                    inputCsrf.name = 'csrf_token';
+                    inputCsrf.value = csrfMeta.getAttribute('content');
+                    form.appendChild(inputCsrf);
+                }
+
                 form.appendChild(inputAction);
                 form.appendChild(inputId);
                 document.body.appendChild(form);

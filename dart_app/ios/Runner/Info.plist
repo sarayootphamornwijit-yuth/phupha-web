@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>แอปพลิเคชันจำเป็นต้องเข้าถึงกล้องถ่ายภาพเพื่อสแกนคิวอาร์โค้ดเช็คชื่อเข้าร่วมกิจกรรม</string>
 </dict>
 </plist>

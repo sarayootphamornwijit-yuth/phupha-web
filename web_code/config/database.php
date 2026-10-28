@@ -86,122 +86,127 @@ try {
     $conn->set_charset('utf8mb4');
     try { $conn->query("SET time_zone = '+07:00'"); } catch (\Throwable $e) {}
 
-    // ตรวจสอบและสร้างตาราง / คอลัมน์ที่จำเป็นโดยอัตโนมัติ (Auto-healing)
-    try {
-        $conn->query("
-            CREATE TABLE IF NOT EXISTS vehicles (
-                vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
-                activity_id INT NOT NULL,
-                vehicle_type VARCHAR(100) NOT NULL,
-                license_plate VARCHAR(50) NOT NULL,
-                driver_name VARCHAR(100) NOT NULL,
-                driver_phone VARCHAR(50) DEFAULT NULL,
-                capacity INT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                KEY idx_activity (activity_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
-    } catch (\Throwable $e) {}
+    // ตรวจสอบและสร้างตาราง / คอลัมน์ที่จำเป็นโดยอัตโนมัติ (ทำงานเพียงครั้งเดียวเพื่อประสิทธิภาพและความเสถียรของ MySQL)
+    $migrationLock = __DIR__ . '/.db_migrated.lock';
+    if (!file_exists($migrationLock)) {
+        try {
+            $conn->query("
+                CREATE TABLE IF NOT EXISTS vehicles (
+                    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+                    activity_id INT NOT NULL,
+                    vehicle_type VARCHAR(100) NOT NULL,
+                    license_plate VARCHAR(50) NOT NULL,
+                    driver_name VARCHAR(100) NOT NULL,
+                    driver_phone VARCHAR(50) DEFAULT NULL,
+                    capacity INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    KEY idx_activity (activity_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {}
 
-    try { $conn->query("ALTER TABLE vehicles CHANGE COLUMN id vehicle_id INT AUTO_INCREMENT"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE news CHANGE COLUMN id news_id INT AUTO_INCREMENT"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE vehicles ADD COLUMN activity_id INT NOT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE vehicles ADD COLUMN vehicle_type VARCHAR(100) NOT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE vehicles ADD COLUMN license_plate VARCHAR(50) NOT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE vehicles ADD COLUMN driver_name VARCHAR(100) NOT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE vehicles ADD COLUMN driver_phone VARCHAR(50) DEFAULT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE vehicles ADD COLUMN capacity INT DEFAULT 0"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE vehicles CHANGE COLUMN id vehicle_id INT AUTO_INCREMENT"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE news CHANGE COLUMN id news_id INT AUTO_INCREMENT"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE vehicles ADD COLUMN activity_id INT NOT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE vehicles ADD COLUMN vehicle_type VARCHAR(100) NOT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE vehicles ADD COLUMN license_plate VARCHAR(50) NOT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE vehicles ADD COLUMN driver_name VARCHAR(100) NOT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE vehicles ADD COLUMN driver_phone VARCHAR(50) DEFAULT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE vehicles ADD COLUMN capacity INT DEFAULT 0"); } catch (\Throwable $e) {}
 
-    try { $conn->query("ALTER TABLE user_activities ADD COLUMN vehicle_id INT DEFAULT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE user_activities ADD COLUMN travel_method VARCHAR(50) DEFAULT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE activities ADD COLUMN meeting_point VARCHAR(255) DEFAULT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE activities ADD COLUMN meeting_time DATETIME DEFAULT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE activities ADD COLUMN survey_details TEXT DEFAULT NULL"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE activities ADD COLUMN category ENUM('volunteer','sport','byaniyan','other') DEFAULT 'volunteer'"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE user_activities ADD COLUMN vehicle_id INT DEFAULT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE user_activities ADD COLUMN travel_method VARCHAR(50) DEFAULT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE activities ADD COLUMN meeting_point VARCHAR(255) DEFAULT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE activities ADD COLUMN meeting_time DATETIME DEFAULT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE activities ADD COLUMN survey_details TEXT DEFAULT NULL"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE activities ADD COLUMN category ENUM('volunteer','sport','byaniyan','other') DEFAULT 'volunteer'"); } catch (\Throwable $e) {}
 
-    // ตรวจสอบและสร้างตาราง Master Data: faculties และ majors
-    try {
-        $conn->query("
-            CREATE TABLE IF NOT EXISTS faculties (
-                faculty_id INT AUTO_INCREMENT PRIMARY KEY,
-                faculty_name VARCHAR(150) NOT NULL UNIQUE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
-    } catch (\Throwable $e) {}
+        // ตรวจสอบและสร้างตาราง Master Data: faculties และ majors
+        try {
+            $conn->query("
+                CREATE TABLE IF NOT EXISTS faculties (
+                    faculty_id INT AUTO_INCREMENT PRIMARY KEY,
+                    faculty_name VARCHAR(150) NOT NULL UNIQUE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {}
 
-    try {
-        $conn->query("
-            CREATE TABLE IF NOT EXISTS majors (
-                major_id INT AUTO_INCREMENT PRIMARY KEY,
-                faculty_id INT NOT NULL,
-                major_name VARCHAR(150) NOT NULL,
-                KEY idx_faculty (faculty_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
-    } catch (\Throwable $e) {}
+        try {
+            $conn->query("
+                CREATE TABLE IF NOT EXISTS majors (
+                    major_id INT AUTO_INCREMENT PRIMARY KEY,
+                    faculty_id INT NOT NULL,
+                    major_name VARCHAR(150) NOT NULL,
+                    KEY idx_faculty (faculty_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {}
 
-    try { $conn->query("ALTER TABLE faculties DROP COLUMN created_at"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE majors DROP COLUMN created_at"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE faculties DROP COLUMN created_at"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE majors DROP COLUMN created_at"); } catch (\Throwable $e) {}
 
-    try { $conn->query("ALTER TABLE users ADD COLUMN faculty_id INT DEFAULT NULL AFTER occupation"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE users ADD COLUMN major_id INT DEFAULT NULL AFTER faculty_id"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE certificates CHANGE COLUMN id certificate_id INT AUTO_INCREMENT"); } catch (\Throwable $e) {}
-    try { $conn->query("ALTER TABLE certificates ADD COLUMN activity_id INT DEFAULT NULL AFTER user_id"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE users ADD COLUMN faculty_id INT DEFAULT NULL AFTER occupation"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE users ADD COLUMN major_id INT DEFAULT NULL AFTER faculty_id"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE certificates CHANGE COLUMN id certificate_id INT AUTO_INCREMENT"); } catch (\Throwable $e) {}
+        try { $conn->query("ALTER TABLE certificates ADD COLUMN activity_id INT DEFAULT NULL AFTER user_id"); } catch (\Throwable $e) {}
 
-    // ตรวจสอบและสร้างตารางตั้งค่าระบบ club_settings
-    try {
-        $conn->query("
-            CREATE TABLE IF NOT EXISTS club_settings (
-                setting_key VARCHAR(50) PRIMARY KEY,
-                setting_value VARCHAR(255) NOT NULL,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
-        $conn->query("INSERT IGNORE INTO club_settings (setting_key, setting_value) VALUES ('certificate_point_threshold', '50')");
-    } catch (\Throwable $e) {}
+        // ตรวจสอบและสร้างตารางตั้งค่าระบบ club_settings
+        try {
+            $conn->query("
+                CREATE TABLE IF NOT EXISTS club_settings (
+                    setting_key VARCHAR(50) PRIMARY KEY,
+                    setting_value VARCHAR(255) NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            $conn->query("INSERT IGNORE INTO club_settings (setting_key, setting_value) VALUES ('certificate_point_threshold', '50')");
+        } catch (\Throwable $e) {}
 
-    // ตรวจสอบและเพิ่มข้อมูลตั้งต้น faculties / majors หากตารางยังว่างเปล่า
-    try {
-        $checkFac = $conn->query("SELECT COUNT(*) AS cnt FROM faculties");
-        if ($checkFac && ($row = $checkFac->fetch_assoc()) && (int)$row['cnt'] === 0) {
-            $conn->query("INSERT IGNORE INTO faculties (faculty_id, faculty_name) VALUES
-                (1, 'คณะครุศาสตร์'),
-                (2, 'คณะวิทยาศาสตร์และเทคโนโลยี'),
-                (3, 'คณะวิทยาการจัดการ'),
-                (4, 'คณะมนุษยศาสตร์และสังคมศาสตร์'),
-                (5, 'คณะเทคโนโลยีการเกษตร'),
-                (6, 'คณะพยาบาลศาสตร์'),
-                (7, 'วิทยาลัยนานาชาติ'),
-                (8, 'วิทยาลัยแม่ฮ่องสอน'),
-                (9, 'วิทยาลัยพัฒนาเศรษฐกิจและเทคโนโลยีชุมชนแห่งเอเชีย (adiCET)')");
+        // ตรวจสอบและเพิ่มข้อมูลตั้งต้น faculties / majors หากตารางยังว่างเปล่า
+        try {
+            $checkFac = $conn->query("SELECT COUNT(*) AS cnt FROM faculties");
+            if ($checkFac && ($row = $checkFac->fetch_assoc()) && (int)$row['cnt'] === 0) {
+                $conn->query("INSERT IGNORE INTO faculties (faculty_id, faculty_name) VALUES
+                    (1, 'คณะครุศาสตร์'),
+                    (2, 'คณะวิทยาศาสตร์และเทคโนโลยี'),
+                    (3, 'คณะวิทยาการจัดการ'),
+                    (4, 'คณะมนุษยศาสตร์และสังคมศาสตร์'),
+                    (5, 'คณะเทคโนโลยีการเกษตร'),
+                    (6, 'คณะพยาบาลศาสตร์'),
+                    (7, 'วิทยาลัยนานาชาติ'),
+                    (8, 'วิทยาลัยแม่ฮ่องสอน'),
+                    (9, 'วิทยาลัยพัฒนาเศรษฐกิจและเทคโนโลยีชุมชนแห่งเอเชีย (adiCET)')");
 
-            $conn->query("INSERT IGNORE INTO majors (major_id, faculty_id, major_name) VALUES
-                (1, 1, 'สาขาวิชาการศึกษาปฐมวัย'),
-                (2, 1, 'สาขาวิชาการประถมศึกษา'),
-                (5, 1, 'สาขาวิชาภาษาไทย'),
-                (6, 1, 'สาขาวิชาภาษาอังกฤษ'),
-                (9, 1, 'สาขาวิชาคณิตศาสตร์'),
-                (21, 2, 'สาขาวิชาวิทยาการคอมพิวเตอร์'),
-                (22, 2, 'สาขาวิชาเทคโนโลยีสารสนเทศ'),
-                (23, 2, 'สาขาวิชาเทคโนโลยีคอมพิวเตอร์และดิจิทัล'),
-                (24, 2, 'สาขาวิชาเคมี'),
-                (37, 3, 'สาขาวิชาการจัดการ'),
-                (38, 3, 'สาขาวิชาการตลาด'),
-                (39, 3, 'สาขาวิชาการบัญชี'),
-                (47, 4, 'สาขาวิชาภาษาไทย'),
-                (48, 4, 'สาขาวิชาภาษาอังกฤษ'),
-                (54, 4, 'สาขาวิชานิติศาสตร์'),
-                (63, 5, 'สาขาวิชาเกษตรศาสตร์'),
-                (66, 6, 'สาขาวิชาพยาบาลศาสตร์')");
-        }
+                $conn->query("INSERT IGNORE INTO majors (major_id, faculty_id, major_name) VALUES
+                    (1, 1, 'สาขาวิชาการศึกษาปฐมวัย'),
+                    (2, 1, 'สาขาวิชาการประถมศึกษา'),
+                    (5, 1, 'สาขาวิชาภาษาไทย'),
+                    (6, 1, 'สาขาวิชาภาษาอังกฤษ'),
+                    (9, 1, 'สาขาวิชาคณิตศาสตร์'),
+                    (21, 2, 'สาขาวิชาวิทยาการคอมพิวเตอร์'),
+                    (22, 2, 'สาขาวิชาเทคโนโลยีสารสนเทศ'),
+                    (23, 2, 'สาขาวิชาเทคโนโลยีคอมพิวเตอร์และดิจิทัล'),
+                    (24, 2, 'สาขาวิชาเคมี'),
+                    (37, 3, 'สาขาวิชาการจัดการ'),
+                    (38, 3, 'สาขาวิชาการตลาด'),
+                    (39, 3, 'สาขาวิชาการบัญชี'),
+                    (47, 4, 'สาขาวิชาภาษาไทย'),
+                    (48, 4, 'สาขาวิชาภาษาอังกฤษ'),
+                    (54, 4, 'สาขาวิชานิติศาสตร์'),
+                    (63, 5, 'สาขาวิชาเกษตรศาสตร์'),
+                    (66, 6, 'สาขาวิชาพยาบาลศาสตร์')");
+            }
 
-        // ตรวจสอบและเพิ่มกิจกรรมเริ่มต้นหากยังไม่มี
-        $checkAct = $conn->query("SELECT COUNT(*) AS cnt FROM activities");
-        if ($checkAct && ($row = $checkAct->fetch_assoc()) && (int)$row['cnt'] === 0) {
-            $conn->query("INSERT IGNORE INTO activities (activity_id, title, category, start_date, location_name, meeting_point, points, approval_status, max_participants) VALUES
-                (1, 'กิจกรรมปลูกป่าสร้างฝายเพื่อเพื่อนภูผา', 'volunteer', '2026-10-15 08:30:00', 'อ.แม่ริม จ.เชียงใหม่', 'ลานกิจกรรม มรภ.เชียงใหม่', 10, 'approved', 50)");
-        }
-    } catch (\Throwable $e) {}
+            // ตรวจสอบและเพิ่มกิจกรรมเริ่มต้นหากยังไม่มี
+            $checkAct = $conn->query("SELECT COUNT(*) AS cnt FROM activities");
+            if ($checkAct && ($row = $checkAct->fetch_assoc()) && (int)$row['cnt'] === 0) {
+                $conn->query("INSERT IGNORE INTO activities (activity_id, title, category, start_date, location_name, meeting_point, points, approval_status, max_participants) VALUES
+                    (1, 'กิจกรรมปลูกป่าสร้างฝายเพื่อเพื่อนภูผา', 'volunteer', '2026-10-15 08:30:00', 'อ.แม่ริม จ.เชียงใหม่', 'ลานกิจกรรม มรภ.เชียงใหม่', 10, 'approved', 50)");
+            }
+        } catch (\Throwable $e) {}
+
+        @file_put_contents($migrationLock, date('Y-m-d H:i:s'));
+    }
 
 } catch (mysqli_sql_exception $exception) {
     // บันทึก error ลง log file เพื่อให้ผู้ดูแลระบบตรวจสอบได้ภายหลัง

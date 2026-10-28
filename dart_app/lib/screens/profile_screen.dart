@@ -5,6 +5,14 @@ import '../services/session_manager.dart';
 import 'login_screen.dart';
 import 'edit_profile_screen.dart';
 import 'certificates_screen.dart';
+import 'about_screen.dart';
+import 'advisor_approval_screen.dart';
+import 'advisor_members_screen.dart';
+import 'advisor_news_screen.dart';
+import 'qr_scanner_screen.dart';
+import 'erp_activities_screen.dart';
+
+
 
 // profile_screen.dart
 // หน้าจอโปรไฟล์สมาชิกชมรมเพื่อนภูผา
@@ -138,18 +146,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryPale,
+                      color: _currentUser?.role == 'advisor'
+                          ? AppColors.advisorBadgeBg
+                          : AppColors.primaryPale,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       _currentUser?.role == 'admin'
                           ? 'ผู้ดูแลระบบ (Admin)'
-                          : _currentUser?.role == 'committee'
-                              ? 'กรรมการชมรม'
-                              : 'สมาชิกชมรม',
-                      style: const TextStyle(color: AppColors.primaryDark, fontSize: 12, fontWeight: FontWeight.bold),
+                          : _currentUser?.role == 'advisor'
+                              ? 'อาจารย์ที่ปรึกษา'
+                              : _currentUser?.role == 'committee'
+                                  ? 'กรรมการชมรม'
+                                  : 'สมาชิกชมรม',
+                      style: TextStyle(
+                        color: _currentUser?.role == 'advisor'
+                            ? AppColors.advisorBadgeText
+                            : AppColors.primaryDark,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -167,13 +185,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  _buildProfileRow(Icons.badge_outlined, 'รหัสนักศึกษา / ชื่อผู้ใช้', _currentUser?.studentId ?? _currentUser?.username ?? '-'),
+                  _buildProfileRow(
+                    Icons.badge_outlined,
+                    _currentUser?.role == 'advisor' ? 'ตำแหน่ง / สถานะ' : 'รหัสนักศึกษา / ชื่อผู้ใช้',
+                    _currentUser?.role == 'advisor'
+                        ? 'อาจารย์ที่ปรึกษา'
+                        : (_currentUser?.studentId ?? _currentUser?.username ?? '-'),
+                  ),
+                  if (_currentUser?.role == 'advisor') ...[
+                    const Divider(height: 20, color: AppColors.cardBorder),
+                    _buildProfileRow(Icons.school_outlined, 'คณะที่สังกัด', _currentUser?.faculty ?? '-'),
+                  ],
                   const Divider(height: 20, color: AppColors.cardBorder),
-                  _buildProfileRow(Icons.phone_outlined, 'เบอร์โทรศัพท์', _currentUser?.phone ?? '-'),
+                  _buildProfileRow(Icons.phone_outlined, 'เบอร์โทรศัพท์', _currentUser?.phone ?? 'ไม่ได้ระบุเบอร์โทร'),
                   const Divider(height: 20, color: AppColors.cardBorder),
                   _buildProfileRow(Icons.email_outlined, 'อีเมล', _currentUser?.email ?? '-'),
                   const Divider(height: 20, color: AppColors.cardBorder),
-                  _buildProfileRow(Icons.stars_outlined, 'คะแนนจิตอาสาสะสม', '${_currentUser?.points ?? 0} แต้ม', valueColor: AppColors.warning),
+                  _buildProfileRow(
+                    Icons.stars_outlined,
+                    'คะแนนจิตอาสาสะสม',
+                    '${_currentUser?.points ?? 0} แต้ม',
+                    valueColor: AppColors.warning,
+                  ),
                 ],
               ),
             ),
@@ -188,38 +221,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.workspace_premium, color: Colors.amber),
-                    title: const Text('เกียรติบัตรและคะแนนสะสม', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const CertificatesScreen()),
-                      );
-                    },
-                  ),
-                  const Divider(height: 1, indent: 56),
+                  // เมนูเฉพาะสำหรับอาจารย์ที่ปรึกษา
+                  if (_currentUser?.role == 'advisor') ...[
+                    ListTile(
+                      leading: const Icon(Icons.people_alt_outlined, color: Color(0xFF6D28D9)),
+                      title: const Text('ดูข้อมูลสมาชิกชมรม', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AdvisorMembersScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    ListTile(
+                      leading: const Icon(Icons.fact_check_outlined, color: AppColors.primary),
+                      title: const Text('อนุมัติโครงการและกิจกรรม', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AdvisorApprovalScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    ListTile(
+                      leading: const Icon(Icons.campaign_outlined, color: Color(0xFFE65100)),
+                      title: const Text('จัดการข่าวประชาสัมพันธ์', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AdvisorNewsScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                  ],
+
+                  // เมนูทางลัดสำหรับคณะกรรมการ
+                  if (_currentUser?.role == 'committee' || _currentUser?.role == 'leader') ...[
+                    ListTile(
+                      leading: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+                      title: const Text('สแกนเช็คอินกิจกรรม', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    ListTile(
+                      leading: const Icon(Icons.event_available, color: AppColors.primary),
+                      title: const Text('จัดการกิจกรรม (ERP)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ErpActivitiesScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                  ],
+
+                  if (_currentUser?.role != 'advisor') ...[
+                    ListTile(
+
+                      leading: const Icon(Icons.workspace_premium, color: Colors.amber),
+                      title: const Text('เกียรติบัตรและคะแนนสะสม', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CertificatesScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                  ],
+
                   ListTile(
                     leading: const Icon(Icons.info_outline, color: AppColors.primary),
                     title: const Text('เกี่ยวกับชมรมเพื่อนภูผา', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      showAboutDialog(
-                        context: context,
-                        applicationName: 'ชมรมเพื่อนภูผา',
-                        applicationVersion: '1.0.0',
-                        applicationLegalese: 'มหาวิทยาลัยราชภัฏเชียงใหม่',
-                        children: [
-                          const SizedBox(height: 12),
-                          const Text('ระบบบริหารจัดการกิจกรรมและจิตอาสา ชมรมเพื่อนภูผา มหาวิทยาลัยราชภัฏเชียงใหม่'),
-                        ],
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AboutScreen()),
                       );
                     },
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 24),
 
             // ปุ่มออกจากระบบ
