@@ -88,6 +88,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
+    // หากยังไม่ได้เข้าสู่ระบบ แสดงหน้าเชิญชวนให้เข้าสู่ระบบหรือสมัครสมาชิก
+    if (_currentUser == null) {
+      return Scaffold(
+        backgroundColor: AppColors.bgMain,
+        appBar: AppBar(
+          title: const Text(
+            'โปรไฟล์ของฉัน',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryDark,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person_outline,
+                    size: 64,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'ยังไม่ได้เข้าสู่ระบบ',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textMain,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'กรุณาเข้าสู่ระบบเพื่อดูข้อมูลส่วนตัว ประวัติการเข้าร่วมกิจกรรม และเกียรติบัตรของคุณ',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: AppColors.textMuted, height: 1.5),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      ).then((_) => _loadUserProfile());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'เข้าสู่ระบบ / สมัครสมาชิก',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bgMain,
       appBar: AppBar(

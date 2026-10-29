@@ -108,7 +108,16 @@ class _LoginScreenState extends State<LoginScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primaryDark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const MainNavigation()),
+              );
+            }
+          },
         ),
         title: const Text(
           'ชมรมเพื่อนภูผา',

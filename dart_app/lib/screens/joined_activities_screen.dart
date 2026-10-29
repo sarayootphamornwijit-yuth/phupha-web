@@ -12,6 +12,7 @@ import '../widgets/dashed_container.dart';
 import 'select_vehicle_screen.dart';
 import 'activity_detail_screen.dart';
 import 'evaluate_screen.dart';
+import 'login_screen.dart';
 
 // joined_activities_screen.dart
 // หน้ารายการกิจกรรมที่ผู้ใช้ลงทะเบียนเข้าร่วมไว้
@@ -287,9 +288,33 @@ class _JoinedActivitiesScreenState extends State<JoinedActivitiesScreen> {
               child: _joinedList.isEmpty
                   ? ListView(
                       padding: const EdgeInsets.all(16),
-                      children: const [
-                        SizedBox(height: 30),
-                        DashedContainer(message: 'คุณยังไม่ได้ลงทะเบียนเข้าร่วมกิจกรรมใดๆ'),
+                      children: [
+                        const SizedBox(height: 30),
+                        DashedContainer(
+                          message: _currentUser == null
+                              ? 'กรุณาเข้าสู่ระบบเพื่อดูประวัติกิจกรรมที่คุณลงทะเบียนไว้'
+                              : 'คุณยังไม่ได้ลงทะเบียนเข้าร่วมกิจกรรมใดๆ',
+                        ),
+                        if (_currentUser == null) ...[
+                          const SizedBox(height: 20),
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                ).then((_) => _fetchJoinedActivities());
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text('เข้าสู่ระบบ / สมัครสมาชิก'),
+                            ),
+                          ),
+                        ],
                       ],
                     )
                   : ListView.builder(

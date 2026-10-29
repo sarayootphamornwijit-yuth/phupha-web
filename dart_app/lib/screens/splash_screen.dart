@@ -20,26 +20,17 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkLoginStatus();
   }
 
-  // ตรวจสอบสถานะการเข้าสู่ระบบ
+  // ตรวจสอบสถานะและนำทางไปยังหน้าหลัก
   Future<void> _checkLoginStatus() async {
     await Future.delayed(const Duration(milliseconds: 1200));
-    final loggedIn = await SessionManager.isLoggedIn();
 
     if (!mounted) return;
 
-    if (loggedIn) {
-      // หากเข้าสู่ระบบแล้ว ให้นำทางไปยังหน้าหลัก
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainNavigation()),
-      );
-    } else {
-      // หากยังไม่ได้เข้าสู่ระบบ ให้นำทางไปยังหน้า Login
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    }
+    // เข้าแอพแล้วแสดงหน้าหลักเสมอ (ผู้ใช้สามารถดูกิจกรรมก่อน แล้วค่อยสมัครหรือล็อกอินทีหลังได้)
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainNavigation()),
+    );
   }
 
   @override
