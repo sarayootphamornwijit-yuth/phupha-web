@@ -9,7 +9,7 @@ class AppConfig {
   // 1. สำหรับ Android Emulator ใน Android Studio: ใช้ 'http://10.0.2.2/web_code' หรือ 'http://10.0.2.2/phupha-club/web_code'
   // 2. สำหรับมือถือจริงผ่าน Wi-Fi: ใช้ IP เครื่องคอมพิวเตอร์ เช่น 'http://10.0.0.155/web_code'
   // 3. สำหรับ Web / Chrome / Windows: ใช้ 'http://localhost/web_code'
-  static String baseUrl = 'https://parameters-monsters-layer-deck.trycloudflare.com/phupha-club/web_code';
+  static String baseUrl = 'https://cricket-sensitivity-tracy-driven.trycloudflare.com/phupha-club/web_code';
 
   // URL สำหรับเรียกใช้งานไฟล์ API หลัก
   static String get apiUrl => '$baseUrl/api.php';
