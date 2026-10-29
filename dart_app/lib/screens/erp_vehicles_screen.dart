@@ -1,85 +1,205 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
+import '../services/api_service.dart';
+import '../widgets/management_form_widgets.dart';
 
-// erp_vehicles_screen.dart
-// หน้าจอ "จัดการยานพาหนะ" สำหรับคณะกรรมการ ถอดแบบจาก erp_vehicles.php
-class ErpVehiclesScreen extends StatelessWidget {
+//เลือกกิจกรรมก่อน แล้วเตรียมจุดนัดพบและรถได้ระหว่างรออาจารย์อนุมัติ เหมือนเว็บ
+class ErpVehiclesScreen extends StatefulWidget {
   const ErpVehiclesScreen({super.key});
+  @override
+  State<ErpVehiclesScreen> createState() => _ErpVehiclesScreenState();
+}
+
+class _ErpVehiclesScreenState extends State<ErpVehiclesScreen> {
+  final _meeting = TextEditingController();
+  final _survey = TextEditingController();
+  final _plate = TextEditingController();
+  final _capacity = TextEditingController();
+  final _driver = TextEditingController();
+  final _phone = TextEditingController();
+  final _form = GlobalKey<FormState>();
+  String _type = 'รถตู้โดยสาร';
+  int? _activityId;
+  List<Map<String, dynamic>> _vehicles = [];
+  bool _loading = false;
+  bool _saving = false;
+  String? _error;
+  int _loadNumber = 0;
+
+  @override
+  void dispose() {
+    for (final controller in [
+      _meeting,
+      _survey,
+      _plate,
+      _capacity,
+      _driver,
+      _phone,
+    ]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _load(int id) async {
+    final loadNumber = ++_loadNumber;
+    setState(() {
+      _activityId = id;
+      _loading = true;
+      _error = null;
+    });
+    final result = await ApiService.managementGet(
+      'get_vehicle_management',
+      values: {'activity_id': id.toString()},
+    );
+    //หากผู้ใช้เลือกกิจกรรมใหม่แล้ว ไม่เอาคำตอบของกิจกรรมเก่ามาเขียนทับ
+    if (!mounted || loadNumber != _loadNumber) {
+      return;
+    }
+    setState(() {
+      _loading = false;
+      if (result.isSuccess) {
+        _vehicles = List<Map<String, dynamic>>.from(result.data['vehicles']);
+        _meeting.text =
+            result.data['activity']['meeting_point']?.toString() ?? '';
+        _survey.text =
+            result.data['activity']['survey_details']?.toString() ?? '';
+      } else {
+        _error = result.message;
+      }
+    });
+  }
+
+  Future<void> _save(String action, Map<String, String> fields) async {
+    if (_activityId == null || _saving) {
+      return;
+    }
+    setState(() => _saving = true);
+    final id = _activityId!;
+    final result = await ApiService.managementPost(action, {
+      'activity_id': id.toString(),
+      ...fields,
+    });
+    if (!mounted) {
+      return;
+    }
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message)));
+    if (result.isSuccess) {
+      if (action == 'add_vehicle') {
+        _plate.clear();
+        _capacity.clear();
+        _driver.clear();
+        _phone.clear();
+      }
+      if (_activityId == id) _load(id);
+    }
+  }
+
+  Future<void> _add() async {
+    if (!_form.currentState!.validate()) {
+      return;
+    }
+    final capacity = int.tryParse(_capacity.text);
+    if (capacity == null || capacity < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ที่นั่งต้องเป็นจำนวนเต็มตั้งแต่ 1')),
+      );
+      return;
+    }
+    await _save('add_vehicle', {
+      'vehicle_type': _type,
+      'license_plate': _plate.text.trim(),
+      'capacity': _capacity.text,
+      'driver_name': _driver.text.trim(),
+      'driver_phone': _phone.text.trim(),
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F8E9),
-      appBar: AppBar(
-        title: const Text(
-          'จัดการยานพาหนะ',
-          style: TextStyle(
-            color: AppColors.primaryDark,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: AppBar(title: const Text('จัดการยานพาหนะ')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildVehicleCard('รถบัสปรับอากาศ คันที่ 1', 'ทะเบียน 30-1234 เชียงใหม่', '40/45 ที่นั่ง', 'เต็มแล้ว', Colors.red),
-          _buildVehicleCard('รถตู้ชมรม คันที่ 1', 'ทะเบียน นข-5678 เชียงใหม่', '10/14 ที่นั่ง', 'ว่าง 4 ที่', AppColors.primary),
-          _buildVehicleCard('รถสองแถวบริการ', 'ทะเบียน 10-9999 เชียงใหม่', '12/20 ที่นั่ง', 'ว่าง 8 ที่', AppColors.primary),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVehicleCard(String title, String plate, String seats, String status, Color statusColor) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primaryPale,
-              borderRadius: BorderRadius.circular(12),
+          ManagementActivitySelector(menu: 'vehicles', onChanged: _load),
+          const SizedBox(height: 16),
+          if (_loading) const LinearProgressIndicator(),
+          if (_error != null) Text(_error!),
+          if (_activityId != null && !_loading && _error == null) ...[
+            managementCard('จุดนัดพบและข้อมูลสำรวจพื้นที่', [
+              managementInput('จุดนัดพบ / จุดรวมพล', _meeting, required: true),
+              managementInput('ข้อมูลสำรวจพื้นที่', _survey, lines: 3),
+              ElevatedButton(
+                style: managementButtonStyle(),
+                onPressed: _saving
+                    ? null
+                    : () => _save('save_logistics', {
+                        'meeting_point': _meeting.text.trim(),
+                        'survey_details': _survey.text.trim(),
+                      }),
+                child: const Text('บันทึกแผนการเดินทาง'),
+              ),
+            ]),
+            Form(
+              key: _form,
+              child: managementCard('เพิ่มยานพาหนะ', [
+                managementDropdown('ประเภทยานพาหนะ', _type, {
+                  'รถตู้โดยสาร': 'รถตู้โดยสาร',
+                  'รถกระบะ (บรรทุกคน/ของ)': 'รถกระบะ (บรรทุกคน/ของ)',
+                  'รถยนต์ส่วนตัว (เก๋ง)': 'รถยนต์ส่วนตัว (เก๋ง)',
+                  'รถบัสมหาวิทยาลัย': 'รถบัสมหาวิทยาลัย',
+                }, (value) => setState(() => _type = value!)),
+                managementInput('ป้ายทะเบียน', _plate, required: true),
+                managementInput(
+                  'ความจุที่นั่ง',
+                  _capacity,
+                  required: true,
+                  number: true,
+                ),
+                managementInput('ชื่อคนขับ', _driver, required: true),
+                managementInput('เบอร์โทรคนขับ', _phone),
+                ElevatedButton(
+                  style: managementButtonStyle(),
+                  onPressed: _saving ? null : _add,
+                  child: const Text('เพิ่มรถ'),
+                ),
+              ]),
             ),
-            child: const Icon(Icons.directions_bus_filled, color: AppColors.primary, size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(plate, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(height: 4),
-                Text('ที่นั่ง: $seats', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-          ),
+            managementCard('ยานพาหนะของกิจกรรม', [
+              if (_vehicles.isEmpty) const Text('ยังไม่มีข้อมูลรถ'),
+              ..._vehicles.map(
+                (vehicle) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    '${vehicle['vehicle_type']} • ${vehicle['license_plate']}',
+                  ),
+                  subtitle: Text(
+                    'คนขับ ${vehicle['driver_name']} ${vehicle['driver_phone'] ?? ''}\nจอง ${vehicle['booked_seats']}/${vehicle['capacity']} ที่นั่ง',
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'ลบรถ',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: _saving
+                        ? null
+                        : () async {
+                            if (await confirmManagementDelete(
+                              context,
+                              'ลบรถทะเบียน ${vehicle['license_plate']} หรือไม่?',
+                            )) {
+                              await _save('delete_vehicle', {
+                                'vehicle_id': vehicle['vehicle_id'].toString(),
+                              });
+                            }
+                          },
+                  ),
+                ),
+              ),
+            ]),
+          ],
         ],
       ),
     );

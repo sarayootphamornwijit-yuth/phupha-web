@@ -1,3 +1,4 @@
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
@@ -107,7 +108,7 @@ class _JoinedActivitiesScreenState extends State<JoinedActivitiesScreen> {
     final userId = _currentUser!.userId;
     final rawQrData = 'checkin-$userId-${activity.activityId}';
     final shortDisplayCode = 'CHK-ACT${activity.activityId}-U$userId';
-    final qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=4&data=$rawQrData';
+
 
     showDialog(
       context: context,
@@ -172,27 +173,12 @@ class _JoinedActivitiesScreenState extends State<JoinedActivitiesScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  qrImageUrl,
-                  width: 170,
-                  height: 170,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.broken_image, color: Colors.grey, size: 36),
-                        SizedBox(height: 6),
-                        Text('โหลด QR ไม่สำเร็จ', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
+                //สร้าง QR ในเครื่องได้เลย ไม่ต้องส่งรหัสสมาชิกไปเว็บภายนอก
+                child: QrImageView(
+                  data: rawQrData,
+                  size: 170,
+                  padding: EdgeInsets.zero,
+                  backgroundColor: Colors.white,
                 ),
               ),
             ),

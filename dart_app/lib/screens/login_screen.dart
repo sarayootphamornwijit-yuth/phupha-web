@@ -270,9 +270,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: 20),
 
-                        // 4. ลิงก์: ยังไม่มีบัญชี? สมัครสมาชิก
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        //ให้ข้อความขึ้นบรรทัดใหม่ได้บนมือถือจอแคบ โดยใช้สีและขนาดตัวอักษรเดิม
+                        Wrap(
+                          alignment: WrapAlignment.center,
                           children: [
                             const Text(
                               'ยังไม่มีบัญชี? ',

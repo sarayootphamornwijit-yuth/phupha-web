@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
+import '../constants/app_config.dart';
+import 'api_service.dart';
 
 // session_manager.dart
 // จัดการสถานะการเข้าสู่ระบบและบันทึกข้อมูลผู้ใช้แบบ Local
@@ -35,13 +37,21 @@ class SessionManager {
 
   // ตรวจสอบว่าผู้ใช้เข้าสู่ระบบอยู่หรือไม่
   static Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyIsLoggedIn) ?? false;
+    final user = await getUser();
+    final sessionCookie = await getSessionCookie();
+    return user != null && sessionCookie != null;
   }
 
   // ออกจากระบบและลบข้อมูล session
   static Future<void> logout() async {
+    await ApiService.logout();
+    await clearLocalSession();
+  }
+
+  static Future<void> clearLocalSession() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('server_session_cookie');
+    await prefs.remove('server_session_origin');
     await prefs.remove(_keyIsLoggedIn);
     await prefs.remove(_keyUser);
   }
@@ -50,4 +60,17 @@ class SessionManager {
   static Future<void> clear() async {
     await logout();
   }
+  static Future<void> saveSessionCookie(String cookie) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('server_session_cookie', cookie);
+    await prefs.setString('server_session_origin', AppConfig.baseUrl);
+  }
+
+  static Future<String?> getSessionCookie() async {
+    final prefs = await SharedPreferences.getInstance();
+    //ไม่ส่ง session ของเครื่องทดสอบไปยังอีกเซิร์ฟเวอร์หนึ่ง
+    if (prefs.getString('server_session_origin') != AppConfig.baseUrl) return null;
+    return prefs.getString('server_session_cookie');
+  }
+
 }

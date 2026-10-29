@@ -1,0 +1,6 @@
+#คัดลอกเป็น key.properties เฉพาะเมื่อต้องการใช้ release key ของเจ้าของโครงการ
+#เก็บ keystore ไว้นอก htdocs และกรอกรหัสผ่านบนเครื่องของตัวเอง ไม่ส่งขึ้น Git
+storeFile=C:/phupha-keys/upload-keystore.jks
+storePassword=REPLACE_ON_YOUR_COMPUTER
+keyAlias=upload
+keyPassword=REPLACE_ON_YOUR_COMPUTER

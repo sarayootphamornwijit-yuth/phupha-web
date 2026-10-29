@@ -40,6 +40,7 @@ class PhuphaClubApp extends StatelessWidget {
           scrolledUnderElevation: 0,
           centerTitle: true,
           titleTextStyle: TextStyle(
+            fontFamily: 'Prompt',
             fontSize: 17,
             fontWeight: FontWeight.bold,
             color: AppColors.primaryDark,

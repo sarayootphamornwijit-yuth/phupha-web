@@ -43,7 +43,19 @@ class _SelfCheckinScreenState extends State<SelfCheckinScreen> {
       final response = await ApiService.getJoinedActivities(user.userId);
       if (response.isSuccess && response.data != null) {
         // กรองเฉพาะกิจกรรมที่เปิดเช็คอิน
-        activities = response.data!;
+        //แสดงเฉพาะกิจกรรมที่เปิดเช็คอินในวันนี้เหมือนหน้าเว็บ
+        final nowInThailand = DateTime.now().toUtc().add(const Duration(hours: 7));
+        final today = DateTime(nowInThailand.year, nowInThailand.month, nowInThailand.day);
+        activities = response.data!.where((activity) {
+          final start = activity.startDateParsed;
+          final end = activity.endDateParsed ?? start;
+          if (!activity.selfCheckinEnabled || start == null || end == null) {
+            return false;
+          }
+          final startDay = DateTime(start.year, start.month, start.day);
+          final endDay = DateTime(end.year, end.month, end.day);
+          return !today.isBefore(startDay) && !today.isAfter(endDay);
+        }).toList();
       }
     }
 

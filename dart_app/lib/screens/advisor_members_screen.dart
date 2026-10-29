@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../services/api_service.dart';
+import 'member_detail_screen.dart';
 
 // advisor_members_screen.dart
 // หน้าจอ "ดูข้อมูลสมาชิก" สำหรับอาจารย์ที่ปรึกษา ถอดแบบจาก advisor_members.php
@@ -30,15 +31,29 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
 
   Future<void> _loadMembers() async {
     setState(() => _isLoading = true);
-    final res = await ApiService.getCommittees();
+    final res = await ApiService.getManagementData('get_members');
+    if (!mounted) return;
     if (res.isSuccess && res.data != null) {
-      _members = res.data!;
-      _totalCount = _members.length + 15; // ประมาณการสมาชิก
-      _committeeCount = _members.length;
-      _studentCount = _totalCount - 2;
+      _members = List<Map<String, dynamic>>.from(res.data!);
+      _totalCount = _members.length;
+      _committeeCount = _members
+          .where(
+            (member) =>
+                member['role'] == 'committee' || member['role'] == 'leader',
+          )
+          .length;
+      _studentCount = _members
+          .where((member) => member['user_type'] == 'student')
+          .length;
       _filteredMembers = List.from(_members);
     }
     setState(() => _isLoading = false);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _onSearch(String query) {
@@ -49,9 +64,12 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
         _filteredMembers = _members.where((m) {
           final name = m['name']?.toString().toLowerCase() ?? '';
           final faculty = m['faculty']?.toString().toLowerCase() ?? '';
-          final position = m['committee_position']?.toString().toLowerCase() ?? '';
+          final position =
+              m['committee_position']?.toString().toLowerCase() ?? '';
           final q = query.toLowerCase();
-          return name.contains(q) || faculty.contains(q) || position.contains(q);
+          return name.contains(q) ||
+              faculty.contains(q) ||
+              position.contains(q);
         }).toList();
       }
     });
@@ -73,7 +91,11 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.primaryDark,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -84,11 +106,23 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
             // การ์ดสรุปสถิติ 3 ช่องตาม advisor_members.php
             Row(
               children: [
-                _buildStatCard('สมาชิกทั้งหมด', '$_totalCount', const Color(0xFF2E7D32)),
+                _buildStatCard(
+                  'สมาชิกทั้งหมด',
+                  '$_totalCount',
+                  const Color(0xFF2E7D32),
+                ),
                 const SizedBox(width: 10),
-                _buildStatCard('นักศึกษา', '$_studentCount', const Color(0xFF1976D2)),
+                _buildStatCard(
+                  'นักศึกษา',
+                  '$_studentCount',
+                  const Color(0xFF1976D2),
+                ),
                 const SizedBox(width: 10),
-                _buildStatCard('คณะกรรมการ', '$_committeeCount', const Color(0xFFE65100)),
+                _buildStatCard(
+                  'คณะกรรมการ',
+                  '$_committeeCount',
+                  const Color(0xFFE65100),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -108,7 +142,10 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
                   hintStyle: TextStyle(fontSize: 13, color: Colors.grey),
                   prefixIcon: Icon(Icons.search, color: AppColors.primary),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ),
@@ -116,11 +153,19 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
 
             // รายการสมาชิก
             if (_isLoading)
-              const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator(color: AppColors.primary)))
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(30),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              )
             else if (_filteredMembers.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(40),
-                child: Text('ไม่พบข้อมูลสมาชิกตามที่ค้นหา', style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'ไม่พบข้อมูลสมาชิกตามที่ค้นหา',
+                  style: TextStyle(color: Colors.grey),
+                ),
               )
             else
               ListView.builder(
@@ -132,7 +177,11 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
                   final name = member['name']?.toString() ?? '-';
                   final faculty = member['faculty']?.toString() ?? '';
                   final major = member['major']?.toString() ?? '';
-                  final position = member['committee_position']?.toString() ?? 'กรรมการชมรม';
+                  final position =
+                      member['committee_position']?.toString() ??
+                      (member['role'] == 'advisor'
+                          ? 'อาจารย์ที่ปรึกษา'
+                          : 'สมาชิก');
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10),
@@ -147,7 +196,11 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
                         CircleAvatar(
                           radius: 22,
                           backgroundColor: AppColors.primaryPale,
-                          child: const Icon(Icons.person, color: AppColors.primary, size: 26),
+                          child: const Icon(
+                            Icons.person,
+                            color: AppColors.primary,
+                            size: 26,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -156,18 +209,41 @@ class _AdvisorMembersScreenState extends State<AdvisorMembersScreen> {
                             children: [
                               Text(
                                 name,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                faculty.isNotEmpty ? '$faculty ($major)' : position,
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                faculty.isNotEmpty
+                                    ? '$faculty ($major)'
+                                    : position,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ],
                           ),
                         ),
+                        IconButton(
+                          tooltip: 'ดูรายละเอียดสมาชิก',
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MemberDetailScreen(
+                                userId: int.parse(member['user_id'].toString()),
+                              ),
+                            ),
+                          ),
+                        ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEDE9FE),
                             borderRadius: BorderRadius.circular(8),

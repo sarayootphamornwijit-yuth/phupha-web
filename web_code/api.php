@@ -15,8 +15,27 @@ require_once __DIR__ . '/config/database.php';
 // รับค่าคำสั่งการทำงานจาก URL หรือจากข้อมูลส่งเข้า
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+//รองรับชื่อคำสั่งเก่า แต่ใช้การตรวจสิทธิ์และที่นั่งชุดเดียวกับหน้าเลือกการเดินทาง
+if ($action === 'update_travel') {
+    $action = 'select_vehicle';
+    $oldTravelMethod = $_POST['travel_method'] ?? '';
+    if ($oldTravelMethod === 'เดินทางด้วยตนเอง' || $oldTravelMethod === 'own_travel') {
+        $_POST['travel_type'] = 'own_travel';
+    } else {
+        $_POST['travel_type'] = $oldTravelMethod;
+    }
+}
+
 // ฟังก์ชันช่วยส่งข้อมูลกลับเป็น JSON
 function sendResponse($status, $message, $data = null) {
+    global $conn;
+    if ($status === 'error' && isset($conn)) {
+        try {
+            $conn->rollback();
+        } catch (Throwable $rollbackError) {
+            error_log((string)$rollbackError);
+        }
+    }
     echo json_encode([
         'status' => $status,
         'message' => $message,
@@ -27,8 +46,102 @@ function sendResponse($status, $message, $data = null) {
 
 // ป้องกัน Exception ไม่ให้แสดงผลเป็น HTML บนโฮสต์จริง
 set_exception_handler(function (\Throwable $e) {
-    sendResponse('error', 'ระบบขัดข้อง: ' . $e->getMessage());
+    error_log((string)$e);
+    http_response_code(500);
+    sendResponse('error', 'ระบบขัดข้อง กรุณาลองใหม่อีกครั้ง');
 });
+
+//คำสั่งที่บันทึกข้อมูลรับเฉพาะ POST เพื่อไม่ให้ลิงก์ทั่วไปสั่งแก้ข้อมูลได้
+$writeActions = ['login', 'register', 'register_activity', 'update_travel', 'cancel_registration', 'update_profile', 'select_vehicle', 'self_checkin', 'submit_evaluation', 'advisor_approve_activity', 'checkin_qr', 'logout', 'create_news', 'delete_news', 'edit_news', 'save_activity', 'delete_activity', 'toggle_activity_checkin', 'save_logistics', 'add_vehicle', 'delete_vehicle', 'add_budget', 'delete_budget', 'update_member_role', 'delete_member', 'update_certificate_threshold', 'update_profile_details'];
+if (in_array($action, $writeActions, true) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    sendResponse('error', 'คำสั่งนี้ต้องส่งข้อมูลด้วย POST');
+}
+
+//มือถือส่ง HTTP ตรงและไม่มี Origin ส่วนเว็บที่ส่งคำสั่งบันทึกต้องเป็นเว็บเดียวกัน
+//กันเว็บอื่นใช้ session ของคนที่ล็อกอินอยู่มาสั่งเปลี่ยนสิทธิ์หรือลบข้อมูลผ่านฟอร์ม
+if (in_array($action, $writeActions, true) && isset($_SERVER['HTTP_ORIGIN'])) {
+    $origin = parse_url($_SERVER['HTTP_ORIGIN']);
+    $target = parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? ''));
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    //Cloudflare ส่ง HTTPS เข้ามาที่ Apache ผ่าน HTTP จึงอ่านชนิดการเชื่อมต่อจาก proxy ด้วย
+    if (strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') {
+        $scheme = 'https';
+    }
+    $originScheme = strtolower($origin['scheme'] ?? '');
+    $sameHost = strtolower($origin['host'] ?? '') === strtolower($target['host'] ?? '');
+    $originPort = $origin['port'] ?? ($originScheme === 'https' ? 443 : 80);
+    $targetPort = $target['port'] ?? ($scheme === 'https' ? 443 : 80);
+    $samePort = $originPort === $targetPort;
+    if (!$sameHost || !$samePort || $originScheme !== $scheme || empty($origin['host'])) {
+        http_response_code(403);
+        sendResponse('error', 'ไม่อนุญาตให้เว็บไซต์อื่นสั่งบันทึกข้อมูล');
+    }
+}
+
+//คำสั่งที่เกี่ยวกับข้อมูลส่วนตัวต้องใช้ session ของคนที่เข้าสู่ระบบจริง
+$publicActions = ['login', 'register', 'get_activities', 'get_activity', 'get_news', 'get_faculties', 'get_majors', 'get_committees', 'get_vehicles'];
+if (!in_array($action, $publicActions, true)) {
+    if (empty($_SESSION['user_id'])) {
+        http_response_code(401);
+        sendResponse('error', 'กรุณาเข้าสู่ระบบใหม่');
+    }
+    $sessionUserId = (int)$_SESSION['user_id'];
+    $actorStmt = $conn->prepare("SELECT * FROM users WHERE user_id = ?");
+    $actorStmt->bind_param('i', $sessionUserId);
+    $actorStmt->execute();
+    $actor = $actorStmt->get_result()->fetch_assoc();
+    $actorStmt->close();
+    if (!$actor) {
+        session_destroy();
+        http_response_code(401);
+        sendResponse('error', 'ไม่พบผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่');
+    }
+    $_SESSION['role'] = $actor['role'];
+    $_SESSION['committee_position'] = $actor['committee_position'];
+    //ไม่ใช้ user_id ที่มือถือส่งมา เพราะอาจเป็นรหัสของสมาชิกคนอื่น
+    $_GET['user_id'] = $sessionUserId;
+    $_POST['user_id'] = $sessionUserId;
+    $_POST['advisor_id'] = $sessionUserId;
+    $staffActions = ['get_activity_participants', 'checkin_qr', 'get_management_activities'];
+    if (in_array($action, $staffActions, true) && !in_array($actor['role'], ['admin', 'advisor', 'committee', 'leader'], true)) {
+        http_response_code(403);
+        sendResponse('error', 'คุณไม่มีสิทธิ์ใช้งานส่วนนี้');
+    }
+    $menuActions = ['get_activity_participants' => 'activities', 'get_management_activities' => 'activities', 'checkin_qr' => 'qr_scanner', 'get_members' => 'members', 'get_budget_summary' => 'budgets', 'get_report_summary' => 'reports', 'get_all_vehicles' => 'vehicles', 'get_activity_contacts' => 'activities', 'save_activity' => 'activities', 'delete_activity' => 'activities', 'toggle_activity_checkin' => 'activities', 'get_vehicle_management' => 'vehicles', 'save_logistics' => 'vehicles', 'add_vehicle' => 'vehicles', 'delete_vehicle' => 'vehicles', 'get_activity_budget' => 'budgets', 'add_budget' => 'budgets', 'delete_budget' => 'budgets', 'get_activity_report' => 'reports', 'get_member_detail' => 'members'];
+    if (isset($menuActions[$action]) && !committeeCanAccess($menuActions[$action])) {
+        http_response_code(403);
+        sendResponse('error', 'คุณไม่มีสิทธิ์ใช้งานส่วนนี้');
+    }
+    if (in_array($action, ['create_news', 'edit_news', 'delete_news', 'get_management_news'], true) && !in_array($actor['role'], ['advisor', 'admin', 'committee', 'leader'], true)) {
+        http_response_code(403);
+        sendResponse('error', 'เฉพาะอาจารย์ที่ปรึกษาหรือผู้ดูแลระบบเท่านั้น');
+    }
+    if ($action === 'advisor_approve_activity' && !in_array($actor['role'], ['advisor', 'admin'], true)) {
+        http_response_code(403);
+        sendResponse('error', 'เฉพาะอาจารย์ที่ปรึกษาหรือผู้ดูแลระบบเท่านั้น');
+    }
+}
+
+//คำสั่งเพิ่มสำหรับหน้าจัดการบนมือถือ ตรวจสิทธิ์ด้านบนก่อนเข้ามาในไฟล์นี้
+require_once __DIR__ . '/includes/api_mobile_management.php';
+
+if ($action === 'get_profile') {
+    unset($actor['password']);
+    sendResponse('success', 'ดึงข้อมูลผู้ใช้งานสำเร็จ', $actor);
+}
+
+if ($action === 'logout') {
+    $_SESSION = [];
+    session_destroy();
+    sendResponse('success', 'ออกจากระบบแล้ว');
+}
+
+//หน้าอนุมัติต้องเห็นโครงการที่รออนุมัติด้วย ส่วนหน้าสาธารณะยังเห็นเฉพาะที่อนุมัติแล้ว
+if ($action === 'get_management_activities') {
+    $result = $conn->query("SELECT * FROM activities ORDER BY start_date DESC");
+    sendResponse('success', 'ดึงข้อมูลกิจกรรมสำเร็จ', $result->fetch_all(MYSQLI_ASSOC));
+}
 
 // กรณีเรียกดูรายการกิจกรรมทั้งหมด และรองรับการค้นหา
 if ($action === 'get_activities') {
@@ -38,7 +151,7 @@ if ($action === 'get_activities') {
     if (!empty($searchKeyword)) {
         $likePattern = "%" . $searchKeyword . "%";
         $stmt = $conn->prepare(
-            "SELECT activity_id, title, description, start_date, end_date, location_name, cover_image, category 
+            "SELECT *
              FROM activities 
              WHERE approval_status = 'approved' AND (title LIKE ? OR location_name LIKE ? OR description LIKE ?) 
              ORDER BY start_date DESC"
@@ -46,7 +159,7 @@ if ($action === 'get_activities') {
         $stmt->bind_param("sss", $likePattern, $likePattern, $likePattern);
     } else {
         $stmt = $conn->prepare(
-            "SELECT activity_id, title, description, start_date, end_date, location_name, cover_image, category 
+            "SELECT *
              FROM activities 
              WHERE approval_status = 'approved' 
              ORDER BY start_date DESC"
@@ -102,7 +215,7 @@ if ($action === 'login') {
     }
     
     // คิวรีเฉพาะคอลัมน์ที่มีอยู่ในฐานข้อมูลจริง
-    $stmt = $conn->prepare("SELECT user_id, username, password, name, role, committee_position, user_type, student_id, points FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -110,6 +223,14 @@ if ($action === 'login') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
+            //สร้าง session ใหม่หลังตรวจรหัสผ่าน เพื่อใช้ยืนยันตัวตนในคำขอถัดไป
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = (int)$user['user_id'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['name'] = $user['name'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['committee_position'] = $user['committee_position'];
+            $_SESSION['user_type'] = $user['user_type'];
             unset($user['password']);
             $stmt->close();
             sendResponse('success', 'เข้าสู่ระบบสำเร็จ', $user);
@@ -122,46 +243,46 @@ if ($action === 'login') {
 
 // กรณีเพิ่มการลงทะเบียนเข้าร่วมกิจกรรม
 if ($action === 'register_activity') {
-    $userId = (int)($_POST['user_id'] ?? 0);
+    $userId = (int)$_SESSION['user_id'];
     $activityId = (int)($_POST['activity_id'] ?? 0);
-    
-    if ($userId <= 0 || $activityId <= 0) {
-        sendResponse('error', 'ข้อมูลผู้ใช้หรือกิจกรรมไม่ถูกต้อง');
+    if (!canRegisterActivity()) {
+        sendResponse('error', 'บัญชีนี้ไม่สามารถลงทะเบียนกิจกรรมได้');
     }
-    
-    // ตรวจสอบว่าเคยลงทะเบียนไปแล้วหรือไม่
-    $checkStmt = $conn->prepare("SELECT user_activity_id, status FROM user_activities WHERE user_id = ? AND activity_id = ?");
-    $checkStmt->bind_param("ii", $userId, $activityId);
-    $checkStmt->execute();
-    $checkResult = $checkStmt->get_result();
-    
-    if ($existing = $checkResult->fetch_assoc()) {
-        if ($existing['status'] !== 'cancelled') {
-            $checkStmt->close();
-            sendResponse('error', 'คุณได้ลงทะเบียนกิจกรรมนี้เรียบร้อยแล้ว');
-        } else {
-            // ถ้าเคยยกเลิก ให้เปลี่ยนสถานะกลับเป็น registered
-            $updateStmt = $conn->prepare("UPDATE user_activities SET status = 'registered' WHERE user_activity_id = ?");
-            $updateStmt->bind_param("i", $existing['user_activity_id']);
-            $updateStmt->execute();
-            $updateStmt->close();
-            $checkStmt->close();
-            sendResponse('success', 'ลงทะเบียนกิจกรรมใหม่อีกครั้งสำเร็จ');
-        }
+    //ล็อกกิจกรรมก่อนนับคน เพื่อไม่ให้สองคนจองที่นั่งสุดท้ายพร้อมกัน
+    $conn->begin_transaction();
+    $stmt = $conn->prepare("SELECT *, start_date > NOW() AS registration_open FROM activities WHERE activity_id = ? FOR UPDATE");
+    $stmt->bind_param('i', $activityId);
+    $stmt->execute();
+    $activity = $stmt->get_result()->fetch_assoc();
+    if (!$activity || $activity['approval_status'] !== 'approved' || !$activity['registration_open']) {
+        $conn->rollback();
+        sendResponse('error', 'กิจกรรมนี้ยังไม่อนุมัติ หรือปิดรับสมัครแล้ว');
     }
-    $checkStmt->close();
-    
-    // บันทึกการลงทะเบียนใหม่
-    $insertStmt = $conn->prepare("INSERT INTO user_activities (user_id, activity_id, status) VALUES (?, ?, 'registered')");
-    $insertStmt->bind_param("ii", $userId, $activityId);
-    
-    if ($insertStmt->execute()) {
-        $insertStmt->close();
-        sendResponse('success', 'ลงทะเบียนกิจกรรมสำเร็จ');
+    $stmt = $conn->prepare("SELECT user_activity_id, status FROM user_activities WHERE user_id = ? AND activity_id = ? FOR UPDATE");
+    $stmt->bind_param('ii', $userId, $activityId);
+    $stmt->execute();
+    $existing = $stmt->get_result()->fetch_assoc();
+    if ($existing && $existing['status'] !== 'cancelled') {
+        $conn->rollback();
+        sendResponse('error', 'คุณได้ลงทะเบียนกิจกรรมนี้เรียบร้อยแล้ว');
+    }
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM user_activities WHERE activity_id = ? AND status != 'cancelled'");
+    $stmt->bind_param('i', $activityId);
+    $stmt->execute();
+    $total = (int)$stmt->get_result()->fetch_assoc()['total'];
+    if ((int)$activity['max_participants'] > 0 && $total >= (int)$activity['max_participants']) {
+        $conn->rollback();
+        sendResponse('error', 'กิจกรรมนี้มีผู้ลงทะเบียนเต็มแล้ว');
+    }
+    if ($existing) {
+        $stmt = $conn->prepare("UPDATE user_activities SET status = 'registered', vehicle_id = NULL, travel_method = NULL, check_in_time = NULL, check_out_time = NULL WHERE user_id = ? AND activity_id = ?");
     } else {
-        $insertStmt->close();
-        sendResponse('error', 'ไม่สามารถลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง');
+        $stmt = $conn->prepare("INSERT INTO user_activities (user_id, activity_id, status) VALUES (?, ?, 'registered')");
     }
+    $stmt->bind_param('ii', $userId, $activityId);
+    $stmt->execute();
+    $conn->commit();
+    sendResponse('success', 'ลงทะเบียนกิจกรรมสำเร็จ');
 }
 
 // กรณีเรียกดูกิจกรรมที่ผู้ใช้ลงทะเบียนเข้าร่วมไว้
@@ -173,7 +294,7 @@ if ($action === 'get_joined_activities') {
     }
     
     $stmt = $conn->prepare(
-        "SELECT ua.user_activity_id, ua.status, ua.travel_method, a.activity_id, a.title, a.start_date, a.location_name, a.cover_image 
+        "SELECT a.*, ua.user_activity_id, ua.status, ua.travel_method
          FROM user_activities ua 
          JOIN activities a ON ua.activity_id = a.activity_id 
          WHERE ua.user_id = ? AND ua.status != 'cancelled' 
@@ -192,28 +313,6 @@ if ($action === 'get_joined_activities') {
     sendResponse('success', 'ดึงรายการกิจกรรมที่เข้าร่วมเรียบร้อยแล้ว', $joined);
 }
 
-// กรณีแก้ไขรูปแบบการเดินทาง
-if ($action === 'update_travel') {
-    $userId = (int)($_POST['user_id'] ?? 0);
-    $activityId = (int)($_POST['activity_id'] ?? 0);
-    $travelMethod = trim($_POST['travel_method'] ?? 'เดินทางด้วยตนเอง');
-    
-    if ($userId <= 0 || $activityId <= 0) {
-        sendResponse('error', 'ข้อมูลไม่ถูกต้อง');
-    }
-    
-    $stmt = $conn->prepare("UPDATE user_activities SET travel_method = ? WHERE user_id = ? AND activity_id = ?");
-    $stmt->bind_param("sii", $travelMethod, $userId, $activityId);
-    
-    if ($stmt->execute()) {
-        $stmt->close();
-        sendResponse('success', 'บันทึกรูปแบบการเดินทางเรียบร้อยแล้ว');
-    } else {
-        $stmt->close();
-        sendResponse('error', 'ไม่สามารถบันทึกได้');
-    }
-}
-
 // กรณียกเลิกการลงทะเบียนกิจกรรม
 if ($action === 'cancel_registration') {
     $userId = (int)($_POST['user_id'] ?? 0);
@@ -223,10 +322,10 @@ if ($action === 'cancel_registration') {
         sendResponse('error', 'ข้อมูลไม่ถูกต้อง');
     }
     
-    $stmt = $conn->prepare("UPDATE user_activities SET status = 'cancelled' WHERE user_id = ? AND activity_id = ?");
+    $stmt = $conn->prepare("UPDATE user_activities SET status = 'cancelled', vehicle_id = NULL, travel_method = NULL WHERE user_id = ? AND activity_id = ? AND status = 'registered'");
     $stmt->bind_param("ii", $userId, $activityId);
     
-    if ($stmt->execute()) {
+    if ($stmt->execute() && $stmt->affected_rows > 0) {
         $stmt->close();
         sendResponse('success', 'ยกเลิกการลงทะเบียนเรียบร้อยแล้ว');
     } else {
@@ -246,6 +345,9 @@ if ($action === 'update_profile') {
         sendResponse('error', 'กรุณากรอกชื่อ-นามสกุลให้เรียบร้อย');
     }
     
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        sendResponse('error', 'รูปแบบอีเมลไม่ถูกต้อง');
+    }
     $stmt = $conn->prepare("UPDATE users SET name = ?, phone = ?, email = ? WHERE user_id = ?");
     $stmt->bind_param("sssi", $name, $phone, $email, $userId);
     
@@ -300,67 +402,49 @@ if ($action === 'get_vehicles') {
 
 // กรณีเลือกวิธีการเดินทางและยานพาหนะ
 if ($action === 'select_vehicle') {
-    $userId = (int)($_POST['user_id'] ?? 0);
+    $userId = (int)$_SESSION['user_id'];
     $activityId = (int)($_POST['activity_id'] ?? 0);
     $travelType = trim($_POST['travel_type'] ?? '');
-    $selectedVehicleId = (int)($_POST['vehicle_id'] ?? 0);
-    
-    if ($userId <= 0 || $activityId <= 0 || empty($travelType)) {
-        sendResponse('error', 'ข้อมูลการเลือกการเดินทางไม่ครบถ้วน');
-    }
-    
-    // ตรวจสอบการลงทะเบียนเดิม
-    $chkStmt = $conn->prepare("SELECT user_activity_id FROM user_activities WHERE user_id = ? AND activity_id = ?");
-    $chkStmt->bind_param("ii", $userId, $activityId);
-    $chkStmt->execute();
-    $existing = $chkStmt->get_result()->fetch_assoc();
-    $chkStmt->close();
-    
-    if ($travelType === 'own_travel') {
-        if ($existing) {
-            $stmt = $conn->prepare("UPDATE user_activities SET travel_method = 'own_travel', vehicle_id = NULL WHERE user_id = ? AND activity_id = ?");
-            $stmt->bind_param("ii", $userId, $activityId);
-        } else {
-            $stmt = $conn->prepare("INSERT INTO user_activities (user_id, activity_id, status, travel_method, vehicle_id) VALUES (?, ?, 'registered', 'own_travel', NULL)");
-            $stmt->bind_param("ii", $userId, $activityId);
-        }
-        $stmt->execute();
-        $stmt->close();
-        sendResponse('success', 'บันทึกการเดินทางด้วยตนเองสำเร็จ');
-    } elseif ($travelType === 'club_vehicle') {
-        if ($selectedVehicleId <= 0) {
-            sendResponse('error', 'กรุณาเลือกรถของชมรมที่ต้องการโดยสาร');
-        }
-        
-        // ตรวจสอบที่นั่งว่าง
-        $vStmt = $conn->prepare("
-            SELECT capacity, 
-                   (SELECT COUNT(*) FROM user_activities WHERE vehicle_id = ? AND user_id != ? AND status != 'cancelled') AS booked 
-            FROM vehicles 
-            WHERE vehicle_id = ? AND activity_id = ?
-        ");
-        $vStmt->bind_param("iiii", $selectedVehicleId, $userId, $selectedVehicleId, $activityId);
-        $vStmt->execute();
-        $vData = $vStmt->get_result()->fetch_assoc();
-        $vStmt->close();
-        
-        if (!$vData || ($vData['capacity'] - $vData['booked']) <= 0) {
-            sendResponse('error', 'ที่นั่งในรถคันนี้เต็มแล้ว กรุณาเลือกคันอื่น');
-        }
-        
-        if ($existing) {
-            $stmt = $conn->prepare("UPDATE user_activities SET travel_method = 'club_vehicle', vehicle_id = ? WHERE user_id = ? AND activity_id = ?");
-            $stmt->bind_param("iii", $selectedVehicleId, $userId, $activityId);
-        } else {
-            $stmt = $conn->prepare("INSERT INTO user_activities (user_id, activity_id, status, travel_method, vehicle_id) VALUES (?, ?, 'registered', 'club_vehicle', ?)");
-            $stmt->bind_param("iii", $userId, $activityId, $selectedVehicleId);
-        }
-        $stmt->execute();
-        $stmt->close();
-        sendResponse('success', 'บันทึกการเดินทางโดยรถชมรมสำเร็จ');
-    } else {
+    $vehicleId = (int)($_POST['vehicle_id'] ?? 0);
+    if (!in_array($travelType, ['own_travel', 'club_vehicle'], true)) {
         sendResponse('error', 'รูปแบบการเดินทางไม่ถูกต้อง');
     }
+    $conn->begin_transaction();
+    //ใช้ล็อกเดียวกับการสมัคร เพื่อไม่ให้จำนวนคนหรือจำนวนที่นั่งเปลี่ยนระหว่างบันทึก
+    $stmt = $conn->prepare("SELECT activity_id FROM activities WHERE activity_id = ? FOR UPDATE");
+    $stmt->bind_param('i', $activityId);
+    $stmt->execute();
+    $stmt->get_result()->free();
+    $stmt->close();
+    $stmt = $conn->prepare("SELECT status FROM user_activities WHERE user_id = ? AND activity_id = ? FOR UPDATE");
+    $stmt->bind_param('ii', $userId, $activityId);
+    $stmt->execute();
+    $registration = $stmt->get_result()->fetch_assoc();
+    if (!$registration || $registration['status'] !== 'registered') {
+        $conn->rollback();
+        sendResponse('error', 'ต้องลงทะเบียนกิจกรรมก่อนเลือกการเดินทาง และยังไม่ได้เช็คอิน');
+    }
+    if ($travelType === 'club_vehicle') {
+        $stmt = $conn->prepare("SELECT capacity FROM vehicles WHERE vehicle_id = ? AND activity_id = ? FOR UPDATE");
+        $stmt->bind_param('ii', $vehicleId, $activityId);
+        $stmt->execute();
+        $vehicle = $stmt->get_result()->fetch_assoc();
+        $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM user_activities WHERE vehicle_id = ? AND user_id != ? AND status != 'cancelled'");
+        $stmt->bind_param('ii', $vehicleId, $userId);
+        $stmt->execute();
+        $booked = (int)$stmt->get_result()->fetch_assoc()['total'];
+        if (!$vehicle || $booked >= (int)$vehicle['capacity']) {
+            $conn->rollback();
+            sendResponse('error', 'ไม่พบรถ หรือที่นั่งในรถคันนี้เต็มแล้ว');
+        }
+    } else {
+        $vehicleId = null;
+    }
+    $stmt = $conn->prepare("UPDATE user_activities SET travel_method = ?, vehicle_id = ? WHERE user_id = ? AND activity_id = ?");
+    $stmt->bind_param('siii', $travelType, $vehicleId, $userId, $activityId);
+    $stmt->execute();
+    $conn->commit();
+    sendResponse('success', 'บันทึกการเดินทางสำเร็จ');
 }
 
 // กรณีเช็คอินเข้าร่วมกิจกรรมด้วยตนเอง (Self Check-in)
@@ -390,7 +474,7 @@ if ($action === 'self_checkin') {
     $regData = $chkReg->get_result()->fetch_assoc();
     $chkReg->close();
     
-    if (!$regData) {
+    if (!$regData || $regData['status'] === 'cancelled') {
         sendResponse('error', 'คุณยังไม่ได้ลงทะเบียนเข้าร่วมกิจกรรมนี้');
     }
     
@@ -432,8 +516,16 @@ if ($action === 'submit_evaluation') {
         sendResponse('error', 'คะแนนประเมินต้องอยู่ระหว่าง 1 ถึง 5');
     }
     
+    $conn->begin_transaction();
+    $endStmt = $conn->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND approval_status = 'approved' AND COALESCE(end_date, start_date) <= NOW()");
+    $endStmt->bind_param('i', $activityId);
+    $endStmt->execute();
+    if (!$endStmt->get_result()->fetch_assoc()) {
+        $conn->rollback();
+        sendResponse('error', 'กิจกรรมยังไม่สิ้นสุด จึงยังทำแบบประเมินไม่ได้');
+    }
     // ตรวจสอบว่าเคยเช็คอินหรือไม่
-    $chkReg = $conn->prepare("SELECT status FROM user_activities WHERE user_id = ? AND activity_id = ?");
+    $chkReg = $conn->prepare("SELECT status FROM user_activities WHERE user_id = ? AND activity_id = ? FOR UPDATE");
     $chkReg->bind_param("ii", $userId, $activityId);
     $chkReg->execute();
     $regData = $chkReg->get_result()->fetch_assoc();
@@ -444,7 +536,7 @@ if ($action === 'submit_evaluation') {
     }
     
     // ตรวจสอบว่าเคยประเมินหรือยัง
-    $chkEval = $conn->prepare("SELECT evaluation_id FROM evaluations WHERE user_id = ? AND activity_id = ?");
+    $chkEval = $conn->prepare("SELECT evaluation_id FROM evaluations WHERE user_id = ? AND activity_id = ? FOR UPDATE");
     $chkEval->bind_param("ii", $userId, $activityId);
     $chkEval->execute();
     if ($chkEval->get_result()->num_rows > 0) {
@@ -467,14 +559,15 @@ if ($action === 'submit_evaluation') {
         $actRes = $actStmt->get_result()->fetch_assoc();
         $actStmt->close();
         
-        $pointsEarned = (int)($actRes['points'] ?? 0);
+        $pointsEarned = $actor['user_type'] === 'student' ? (int)($actRes['points'] ?? 0) : 0;
         if ($pointsEarned > 0) {
-            $userUpd = $conn->prepare("UPDATE users SET points = points + ? WHERE user_id = ? AND user_type = 'student'");
+            $userUpd = $conn->prepare("UPDATE users SET points = COALESCE(points, 0) + ? WHERE user_id = ? AND user_type = 'student'");
             $userUpd->bind_param("ii", $pointsEarned, $userId);
             $userUpd->execute();
             $userUpd->close();
         }
         
+        $conn->commit();
         sendResponse('success', "บันทึกการประเมินเรียบร้อย ได้รับแต้มจิตอาสา {$pointsEarned} แต้ม", ['points_earned' => $pointsEarned]);
     } else {
         $stmt->close();
@@ -557,6 +650,7 @@ if ($action === 'get_majors') {
     }
     sendResponse('success', 'ดึงข้อมูลสาขาวิชาสำเร็จ', $majors);
 }
+
 // กรณีเรียกดูรายชื่อคณะกรรมการทำเนียบผู้นำรุ่น
 if ($action === 'get_committees') {
     $stmt = $conn->prepare("
@@ -595,6 +689,14 @@ if ($action === 'register') {
     $userType = $_POST['user_type'] ?? 'student';
     $studentId = trim($_POST['student_id'] ?? '');
     $occupation = trim($_POST['occupation'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    if (!in_array($userType, ['student', 'outsider'], true) || strlen($password) < 6) {
+        sendResponse('error', 'กรุณาเลือกประเภทสมาชิกให้ถูกต้อง และใช้รหัสผ่านอย่างน้อย 6 ตัว');
+    }
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        sendResponse('error', 'รูปแบบอีเมลไม่ถูกต้อง');
+    }
     $academicYear = !empty($_POST['academic_year']) ? (int)$_POST['academic_year'] : null;
     // ผู้สมัครใหม่ทุกคนเริ่มต้นด้วยสิทธิ์ 'member' เสมอ เพื่อความปลอดภัย
     // แต่สำหรับผู้ที่ระบุตำแหน่งกรรมการมา จะบันทึกตำแหน่งไว้เพื่อให้แอดมินเห็นในระบบ
@@ -617,6 +719,41 @@ if ($action === 'register') {
         sendResponse('error', 'กรุณากรอกข้อมูลให้ครบถ้วน');
     }
     
+    //ตรวจข้อมูลนักศึกษาที่เซิร์ฟเวอร์อีกครั้ง และใช้ชื่อคณะจากฐานข้อมูลจริง
+    if ($userType === 'student') {
+        if (!preg_match('/^\d{8}$/', $studentId) || !$facultyId || $academicYear < 1 || $academicYear > 4) {
+            sendResponse('error', 'กรุณาระบุรหัสนักศึกษา 8 หลัก คณะ และชั้นปีให้ถูกต้อง');
+        }
+        $facultyStmt = $conn->prepare("SELECT faculty_name FROM faculties WHERE faculty_id = ?");
+        $facultyStmt->bind_param('i', $facultyId);
+        $facultyStmt->execute();
+        $facultyRow = $facultyStmt->get_result()->fetch_assoc();
+        if (!$facultyRow) {
+            sendResponse('error', 'ไม่พบคณะที่เลือก');
+        }
+        $faculty = $facultyRow['faculty_name'];
+        $occupation = 'นักศึกษา';
+        $major = null;
+        if ($majorId) {
+            $majorStmt = $conn->prepare("SELECT major_name FROM majors WHERE major_id = ? AND faculty_id = ?");
+            $majorStmt->bind_param('ii', $majorId, $facultyId);
+            $majorStmt->execute();
+            $majorRow = $majorStmt->get_result()->fetch_assoc();
+            if (!$majorRow) {
+                sendResponse('error', 'สาขาวิชาไม่ตรงกับคณะที่เลือก');
+            }
+            $major = $majorRow['major_name'];
+        }
+    } else {
+        $studentId = null;
+        $academicYear = null;
+        $facultyId = null;
+        $majorId = null;
+        $faculty = null;
+        $major = null;
+        $committeePosition = null;
+    }
+
     // หากเป็นนักศึกษา กำหนด Username ให้เป็นรหัสนักศึกษาตามระบบเว็บ
     $actualUsername = $username;
     if ($userType === 'student' && !empty($studentId)) {
@@ -662,13 +799,16 @@ if ($action === 'register') {
         $insertSuccess = $insStmt->execute();
         $insStmt->close();
     } catch (\Throwable $e) {
-        // กรณีฐานข้อมูลบางเวอร์ชันไม่มีคอลัมน์ faculty/major ให้บันทึกแบบพื้นฐาน
-        $fallbackStmt = $conn->prepare("INSERT INTO users (username, password, name, user_type, student_id, occupation, academic_year, role, points) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)");
-        $fallbackStmt->bind_param("ssssssis", $actualUsername, $hashedPassword, $name, $userType, $studentId, $occupation, $academicYear, $userRole);
-        $insertSuccess = $fallbackStmt->execute();
-        $fallbackStmt->close();
+        error_log((string)$e);
+        sendResponse('error', 'สมัครสมาชิกไม่สำเร็จ กรุณาตรวจสอบคณะและสาขาวิชา หรือชื่อผู้ใช้ที่ซ้ำ');
     }
-    
+    if ($insertSuccess) {
+        $newUserId = $conn->insert_id;
+        $contactStmt = $conn->prepare("UPDATE users SET phone = ?, email = ? WHERE user_id = ?");
+        $contactStmt->bind_param('ssi', $phone, $email, $newUserId);
+        $contactStmt->execute();
+    }
+
     if ($insertSuccess) {
         sendResponse('success', 'สมัครสมาชิกสำเร็จ เข้าสู่ระบบได้ทันที');
     } else {
@@ -747,6 +887,9 @@ if ($action === 'checkin_qr') {
         $u_id = (int)$matches[1];
         $a_id = (int)$matches[2];
         $token = $matches[3] ?? '';
+    } elseif (preg_match('/^CHK-ACT(\d+)-U(\d+)$/i', $qrData, $matches)) {
+        $a_id = (int)$matches[1];
+        $u_id = (int)$matches[2];
     } elseif (!empty($qrData) && $activityId > 0) {
         // กรณีพิมพ์รหัสนักศึกษา หรือ username
         $stmtUser = $conn->prepare("SELECT user_id FROM users WHERE student_id = ? OR username = ? LIMIT 1");
@@ -762,6 +905,10 @@ if ($action === 'checkin_qr') {
 
     if ($u_id <= 0 || $a_id <= 0) {
         sendResponse('error', 'รูปแบบรหัสเช็คอินไม่ถูกต้อง หรือไม่พบข้อมูลกิจกรรม');
+    }
+
+    if ($activityId > 0 && $activityId !== $a_id) {
+        sendResponse('error', 'QR Code นี้เป็นของกิจกรรมอื่น กรุณาเลือกกิจกรรมให้ตรงกัน');
     }
 
     if (!empty($token) && function_exists('verifyQrToken') && !verifyQrToken($u_id, $a_id, $token)) {
@@ -786,6 +933,9 @@ if ($action === 'checkin_qr') {
         $studentId  = $memberData['student_id'] ?: '-';
         $actTitle   = $memberData['activity_title'];
 
+        if ($status === 'cancelled') {
+            sendResponse('error', 'สมาชิกยกเลิกการลงทะเบียนแล้ว');
+        }
         if ($status === 'registered') {
             $stmt_upd = $conn->prepare("UPDATE user_activities SET status = 'checked_in', check_in_time = NOW() WHERE user_id = ? AND activity_id = ?");
             $stmt_upd->bind_param("ii", $u_id, $a_id);
@@ -810,6 +960,8 @@ if ($action === 'checkin_qr') {
         sendResponse('error', 'ไม่พบข้อมูลการลงทะเบียนสำหรับกิจกรรมนี้');
     }
 }
+
+require __DIR__ . '/includes/api_management.php';
 
 // กรณีคำสั่งไม่ตรงกับเงื่อนไขใด
 sendResponse('error', 'ไม่พบคำสั่งที่เรียกใช้งาน');

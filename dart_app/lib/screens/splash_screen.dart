@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../services/session_manager.dart';
-import 'login_screen.dart';
+import '../services/api_service.dart';
 import 'main_navigation.dart';
 
 // splash_screen.dart
@@ -14,15 +15,34 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  Timer? _navigationTimer;
+
+  @override
+  void dispose() {
+    //ยกเลิกเวลารอเมื่อออกจากหน้านี้ จะได้ไม่ทำงานต่อหลังปิดหน้าแล้ว
+    _navigationTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
+    _navigationTimer = Timer(
+      const Duration(milliseconds: 1200),
+      _checkLoginStatus,
+    );
   }
 
   // ตรวจสอบสถานะและนำทางไปยังหน้าหลัก
   Future<void> _checkLoginStatus() async {
-    await Future.delayed(const Duration(milliseconds: 1200));
+    final loggedIn = await SessionManager.isLoggedIn();
+    if (loggedIn) {
+      final response = await ApiService.getProfile();
+      if (response.isSuccess && response.data != null) {
+        await SessionManager.saveUser(response.data!);
+      }
+      //ถ้า session หมดอายุ API จะล้างข้อมูลล็อกอิน แล้วเปิดหน้าแรกแบบผู้เยี่ยมชม
+    }
 
     if (!mounted) return;
 
@@ -48,11 +68,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.terrain,
-                size: 72,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.terrain, size: 72, color: Colors.white),
             ),
             const SizedBox(height: 24),
 

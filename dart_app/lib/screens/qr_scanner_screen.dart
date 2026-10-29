@@ -1,3 +1,4 @@
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/activity_model.dart';
@@ -15,8 +16,31 @@ class QrScannerScreen extends StatefulWidget {
 class _QrScannerScreenState extends State<QrScannerScreen> {
   final TextEditingController _codeController = TextEditingController();
   bool _isLoading = false;
+  bool _scannerBusy = false;
+  final MobileScannerController _scannerController = MobileScannerController(formats: [BarcodeFormat.qrCode]);
   List<ActivityModel> _activities = [];
   int? _selectedActivityId;
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  //กันกล้องอ่านรหัสเดิมซ้ำระหว่างที่ยังเปิดกล่องผลเช็คอินอยู่
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    if (_scannerBusy || _isLoading || capture.barcodes.isEmpty) return;
+    final code = capture.barcodes.first.rawValue;
+    if (code == null || code.isEmpty) return;
+    _scannerBusy = true;
+    _codeController.text = code;
+    try {
+      await _handleManualCheckin();
+    } finally {
+      _scannerBusy = false;
+    }
+  }
 
   @override
   void initState() {
@@ -26,6 +50,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
   Future<void> _loadActivities() async {
     final res = await ApiService.getActivities();
+    if (!mounted) return;
     if (res.isSuccess && res.data != null && res.data!.isNotEmpty) {
       setState(() {
         _activities = res.data!;
@@ -48,9 +73,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       qrData: code,
       activityId: _selectedActivityId,
     );
-    setState(() => _isLoading = false);
-
     if (!mounted) return;
+    setState(() => _isLoading = false);
 
     if (res.isSuccess) {
       _codeController.clear();
@@ -59,7 +83,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       final studentId = data?['student_id'] ?? code;
       final actTitle = data?['activity_title'] ?? 'กิจกรรมชมรม';
 
-      showDialog(
+      await showDialog(
         context: context,
         builder: (context) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -97,7 +121,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         ),
       );
     } else {
-      showDialog(
+      await showDialog(
         context: context,
         builder: (context) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -189,7 +213,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // กล่องจำลองเครื่องสแกน QR
+                //ใช้กล้องจริงในกรอบเดิมของหน้าสแกน QR
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
                   decoration: BoxDecoration(
@@ -214,13 +238,15 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppColors.primary, width: 2),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.qr_code_scanner, size: 70, color: AppColors.primary),
-                            const SizedBox(height: 8),
-                            const Text('ช่องเล็งสแกน QR Code', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: MobileScanner(
+                            controller: _scannerController,
+                            onDetect: _onDetect,
+                            errorBuilder: (context, error) => const Center(
+                              child: Text('เปิดกล้องไม่ได้ กรุณาอนุญาตกล้อง\nหรือกรอกรหัสด้านล่าง', textAlign: TextAlign.center),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 18),

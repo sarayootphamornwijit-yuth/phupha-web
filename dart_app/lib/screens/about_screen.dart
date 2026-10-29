@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_config.dart';
 
 // about_screen.dart
 // หน้าจอ "เกี่ยวกับเรา" ถอดแบบดีไซน์จาก about.php ของเว็บไซต์
@@ -73,7 +74,7 @@ class AboutScreen extends StatelessWidget {
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return Image.network(
-                              'http://phuphaclub.ct.ws/assets/images/logo.png',
+                              '${AppConfig.baseUrl}/assets/images/logo.png',
                               width: 120,
                               height: 120,
                               fit: BoxFit.contain,

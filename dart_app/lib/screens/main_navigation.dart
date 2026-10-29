@@ -19,7 +19,7 @@ class _MainNavigationState extends State<MainNavigation> {
   late int _currentIndex;
 
   // หน้าย่อยทั้ง 4 แท็บ
-  final List<Widget> _screens = const [
+  final List<Widget> _screens = [
     HomeScreen(),
     ActivitiesScreen(),
     JoinedActivitiesScreen(),
@@ -53,6 +53,23 @@ class _MainNavigationState extends State<MainNavigation> {
           currentIndex: _currentIndex,
           onTap: (index) {
             setState(() {
+              //เปิดแท็บด้วยข้อมูลใหม่หลังสมัครกิจกรรม เช็คอิน หรือได้รับคะแนน
+              if (index != _currentIndex) {
+                switch (index) {
+                  case 0:
+                    _screens[index] = HomeScreen(key: UniqueKey());
+                    break;
+                  case 1:
+                    _screens[index] = ActivitiesScreen(key: UniqueKey());
+                    break;
+                  case 2:
+                    _screens[index] = JoinedActivitiesScreen(key: UniqueKey());
+                    break;
+                  case 3:
+                    _screens[index] = ProfileScreen(key: UniqueKey());
+                    break;
+                }
+              }
               _currentIndex = index;
             });
           },

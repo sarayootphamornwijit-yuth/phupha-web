@@ -17,8 +17,8 @@ import '../screens/erp_activities_screen.dart';
 import '../screens/erp_budgets_screen.dart';
 import '../screens/erp_vehicles_screen.dart';
 import '../screens/erp_reports_screen.dart';
-
-
+import '../screens/admin_users_screen.dart';
+import '../screens/admin_dashboard_screen.dart';
 
 // web_drawer.dart
 // เมนูด้านข้าง (Sidebar Drawer) ออกแบบตามแท็ก <aside class="sidebar"> ใน header.php ของเว็บ
@@ -31,19 +31,12 @@ class WebDrawer extends StatelessWidget {
   // ข้อมูลผู้ใช้ปัจจุบัน
   final UserModel? currentUser;
 
-  const WebDrawer({
-    super.key,
-    required this.currentRoute,
-    this.currentUser,
-  });
+  const WebDrawer({super.key, required this.currentRoute, this.currentUser});
 
   // ฟังก์ชันนำทางไปยังหน้าต่างๆ
   void _navigateTo(BuildContext context, Widget screen) {
     Navigator.pop(context); // ปิด Drawer ก่อน
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
   }
 
   // นำทางไปยังหน้ากิจกรรมพร้อมหมวดหมู่ที่เลือก
@@ -57,45 +50,13 @@ class WebDrawer extends StatelessWidget {
     );
   }
 
-  // แสดงกล่องข้อความข้อมูล เช่น เกี่ยวกับเรา หรือ ติดต่อเรา
-  void _showInfoDialog(BuildContext context, String title, String content) {
-    Navigator.pop(context);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ตกลง', style: TextStyle(color: AppColors.primary)),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ตรวจสอบสิทธิ์การเข้าถึงเมนู ERP ของคณะกรรมการตาม committee_position
 
   bool _canCommitteeAccess(String menu) {
-    if (currentUser?.role == 'admin') return true;
-    final pos = currentUser?.committeePosition;
-    // หากไม่ระบุตำแหน่ง ให้เปิดให้เข้าถึงเพื่ออำนวยความสะดวก
-    if (pos == null || pos.isEmpty) return true;
-    const map = {
-      'activities': ['president', 'vice_president', 'secretary_saluang', 'secretary_wiangbua'],
-      'budgets': ['president', 'vice_president', 'treasurer'],
-      'vehicles': ['president', 'vice_president', 'venue_coordinator'],
-      'reports': ['president', 'vice_president', 'secretary_saluang', 'secretary_wiangbua'],
-      'qr_scanner': ['president', 'vice_president', 'treasurer', 'secretary_saluang', 'secretary_wiangbua', 'nurse', 'venue_coordinator'],
-      'members': ['president', 'vice_president', 'secretary_saluang', 'secretary_wiangbua'],
-    };
-    if (!map.containsKey(menu)) return true;
-    return map[menu]!.contains(pos);
+    return currentUser?.canManage(menu) ?? false;
   }
 
   @override
-
   Widget build(BuildContext context) {
     final isLoggedIn = currentUser != null;
     final isStudent = currentUser?.userType == 'student';
@@ -113,7 +74,11 @@ class WebDrawer extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               alignment: Alignment.centerRight,
               child: IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF757575), size: 24),
+                icon: const Icon(
+                  Icons.close,
+                  color: Color(0xFF757575),
+                  size: 24,
+                ),
                 onPressed: () => Navigator.pop(context),
                 tooltip: 'ปิดเมนู',
               ),
@@ -134,7 +99,9 @@ class WebDrawer extends StatelessWidget {
                       if (currentRoute != 'home') {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => const HomeScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const HomeScreen(),
+                          ),
                           (route) => false,
                         );
                       }
@@ -172,7 +139,8 @@ class WebDrawer extends StatelessWidget {
                       context: context,
                       title: 'กิจกรรมที่เข้าร่วม',
                       isActive: currentRoute == 'joined',
-                      onTap: () => _navigateTo(context, const JoinedActivitiesScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const JoinedActivitiesScreen()),
                     ),
 
                     // 6. เกียรติบัตรของฉัน
@@ -180,7 +148,8 @@ class WebDrawer extends StatelessWidget {
                       context: context,
                       title: 'เกียรติบัตรของฉัน',
                       isActive: currentRoute == 'certificates',
-                      onTap: () => _navigateTo(context, const CertificatesScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const CertificatesScreen()),
                     ),
 
                     // 7. เช็คอินกิจกรรม (สำหรับนักศึกษา)
@@ -189,7 +158,8 @@ class WebDrawer extends StatelessWidget {
                         context: context,
                         title: 'เช็คอินกิจกรรม',
                         isActive: currentRoute == 'self_checkin',
-                        onTap: () => _navigateTo(context, const SelfCheckinScreen()),
+                        onTap: () =>
+                            _navigateTo(context, const SelfCheckinScreen()),
                       ),
                   ],
 
@@ -204,7 +174,8 @@ class WebDrawer extends StatelessWidget {
                     context: context,
                     title: 'กรรมการผู้นำรุ่น',
                     isActive: currentRoute == 'committee_directory',
-                    onTap: () => _navigateTo(context, const CommitteeDirectoryScreen()),
+                    onTap: () =>
+                        _navigateTo(context, const CommitteeDirectoryScreen()),
                   ),
 
                   // 9. เกี่ยวกับเรา
@@ -223,10 +194,31 @@ class WebDrawer extends StatelessWidget {
                     onTap: () => _navigateTo(context, const ContactScreen()),
                   ),
 
+                  if (currentUser?.role == 'admin')
+                    _buildMenuItem(
+                      context: context,
+                      title: 'แดชบอร์ดระบบ',
+                      isActive: currentRoute == 'admin_dashboard',
+                      onTap: () =>
+                          _navigateTo(context, const AdminDashboardScreen()),
+                    ),
+                  if (currentUser?.role == 'admin')
+                    _buildMenuItem(
+                      context: context,
+                      title: 'จัดการสมาชิก',
+                      isActive: currentRoute == 'admin_users',
+                      onTap: () =>
+                          _navigateTo(context, const AdminUsersScreen()),
+                    ),
+
                   // 11. ระบบจัดการองค์กร (ERP) สำหรับ คณะกรรมการ (Committee)
-                  if (currentUser?.role == 'committee' || currentUser?.role == 'leader') ...[
+                  if (currentUser?.role == 'committee' ||
+                      currentUser?.role == 'leader') ...[
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Divider(color: Color(0xFFE2E8F0), height: 1),
                     ),
                     const Padding(
@@ -236,7 +228,8 @@ class WebDrawer extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primary, // สีเขียวหลักสำหรับคณะกรรมการ
+                          color:
+                              AppColors.primary, // สีเขียวหลักสำหรับคณะกรรมการ
                         ),
                       ),
                     ),
@@ -245,55 +238,65 @@ class WebDrawer extends StatelessWidget {
                         context: context,
                         title: 'ดูข้อมูลสมาชิก',
                         isActive: currentRoute == 'advisor_members',
-                        onTap: () => _navigateTo(context, const AdvisorMembersScreen()),
+                        onTap: () =>
+                            _navigateTo(context, const AdvisorMembersScreen()),
                       ),
                     if (_canCommitteeAccess('qr_scanner'))
                       _buildMenuItem(
                         context: context,
                         title: 'สแกนเช็คอินกิจกรรม',
                         isActive: currentRoute == 'qr_scanner',
-                        onTap: () => _navigateTo(context, const QrScannerScreen()),
+                        onTap: () =>
+                            _navigateTo(context, const QrScannerScreen()),
                       ),
                     if (_canCommitteeAccess('activities'))
                       _buildMenuItem(
                         context: context,
                         title: 'จัดการกิจกรรม',
                         isActive: currentRoute == 'erp_activities',
-                        onTap: () => _navigateTo(context, const ErpActivitiesScreen()),
+                        onTap: () =>
+                            _navigateTo(context, const ErpActivitiesScreen()),
                       ),
                     if (_canCommitteeAccess('budgets'))
                       _buildMenuItem(
                         context: context,
                         title: 'บัญชีรายรับ-รายจ่าย',
                         isActive: currentRoute == 'erp_budgets',
-                        onTap: () => _navigateTo(context, const ErpBudgetsScreen()),
+                        onTap: () =>
+                            _navigateTo(context, const ErpBudgetsScreen()),
                       ),
                     if (_canCommitteeAccess('vehicles'))
                       _buildMenuItem(
                         context: context,
                         title: 'จัดการยานพาหนะ',
                         isActive: currentRoute == 'erp_vehicles',
-                        onTap: () => _navigateTo(context, const ErpVehiclesScreen()),
+                        onTap: () =>
+                            _navigateTo(context, const ErpVehiclesScreen()),
                       ),
                     _buildMenuItem(
                       context: context,
                       title: 'จัดการข่าวประชาสัมพันธ์',
                       isActive: currentRoute == 'advisor_news',
-                      onTap: () => _navigateTo(context, const AdvisorNewsScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const AdvisorNewsScreen()),
                     ),
                     if (_canCommitteeAccess('reports'))
                       _buildMenuItem(
                         context: context,
                         title: 'สรุปรายงานผล',
                         isActive: currentRoute == 'erp_reports',
-                        onTap: () => _navigateTo(context, const ErpReportsScreen()),
+                        onTap: () =>
+                            _navigateTo(context, const ErpReportsScreen()),
                       ),
                   ],
 
                   // 12. เมนูอาจารย์ที่ปรึกษา (แสดงเฉพาะผู้ใช้ที่มีสิทธิ์เป็น advisor)
                   if (currentUser?.role == 'advisor') ...[
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Divider(color: Color(0xFFE2E8F0), height: 1),
                     ),
                     const Padding(
@@ -303,7 +306,9 @@ class WebDrawer extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF6D28D9), // สีม่วงเข้มประจำตำแหน่งอาจารย์
+                          color: Color(
+                            0xFF6D28D9,
+                          ), // สีม่วงเข้มประจำตำแหน่งอาจารย์
                         ),
                       ),
                     ),
@@ -311,26 +316,27 @@ class WebDrawer extends StatelessWidget {
                       context: context,
                       title: 'ดูข้อมูลสมาชิก',
                       isActive: currentRoute == 'advisor_members',
-                      onTap: () => _navigateTo(context, const AdvisorMembersScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const AdvisorMembersScreen()),
                     ),
                     _buildMenuItem(
                       context: context,
                       title: 'อนุมัติกิจกรรม',
                       isActive: currentRoute == 'advisor_approval',
-                      onTap: () => _navigateTo(context, const AdvisorApprovalScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const AdvisorApprovalScreen()),
                     ),
                     _buildMenuItem(
                       context: context,
                       title: 'จัดการข่าวประชาสัมพันธ์',
                       isActive: currentRoute == 'advisor_news',
-                      onTap: () => _navigateTo(context, const AdvisorNewsScreen()),
+                      onTap: () =>
+                          _navigateTo(context, const AdvisorNewsScreen()),
                     ),
                   ],
                 ],
               ),
             ),
-
-
           ],
         ),
       ),
@@ -349,10 +355,14 @@ class WebDrawer extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFE8F5E9) : Colors.transparent, // สีพื้นหลังเขียวอ่อนตาม .nav-link.active
+          color: isActive
+              ? const Color(0xFFE8F5E9)
+              : Colors.transparent, // สีพื้นหลังเขียวอ่อนตาม .nav-link.active
           border: Border(
             left: BorderSide(
-              color: isActive ? AppColors.primary : Colors.transparent, // เส้นขอบซ้าย 3px ตาม border-left
+              color: isActive
+                  ? AppColors.primary
+                  : Colors.transparent, // เส้นขอบซ้าย 3px ตาม border-left
               width: 3.5,
             ),
           ),

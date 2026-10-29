@@ -72,6 +72,15 @@ set_exception_handler(function (\Throwable $e) use ($isLocalEnv) {
     exit;
 });
 
+//ใช้ค่าจากเครื่องเซิร์ฟเวอร์เมื่อมีการกำหนดไว้ โดยไม่ต้องใส่รหัสผ่านจริงลงในแอป
+$dbHost = getenv('PHUPHA_DB_HOST') ?: DB_HOST;
+$dbUser = getenv('PHUPHA_DB_USER') ?: DB_USER;
+$dbPassword = getenv('PHUPHA_DB_PASSWORD');
+if ($dbPassword === false) {
+    $dbPassword = DB_PASS;
+}
+$dbName = getenv('PHUPHA_DB_NAME') ?: DB_NAME;
+
 // ส่วนที่ 3 เปิดใช้งานโหมด Exception สำหรับ MySQLi
 // ทำให้ MySQLi โยน Exception เมื่อเกิด SQL Error แทนการ return false
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -80,10 +89,22 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 // ส่วนที่ 4 สร้างการเชื่อมต่อฐานข้อมูล
 try {
     // สร้าง object การเชื่อมต่อ mysqli
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    $conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
     // ตั้งค่า charset เป็น utf8mb4 เพื่อรองรับภาษาไทยและ Emoji อย่างสมบูรณ์
     $conn->set_charset('utf8mb4');
+    //ฐานข้อมูลรุ่นเก่ายังไม่มีช่องอีเมล จึงเพิ่มเฉพาะเมื่อยังไม่มีคอลัมน์นี้
+    if ($conn->query("SHOW COLUMNS FROM users LIKE 'email'")->num_rows === 0) {
+        try {
+            $conn->query("ALTER TABLE users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
+        } catch (mysqli_sql_exception $error) {
+            //ถ้าสองคนเปิดเว็บพร้อมกัน อีกคำขออาจเพิ่มคอลัมน์ไปก่อนแล้ว
+            if ($error->getCode() !== 1060) {
+                throw $error;
+            }
+        }
+    }
+
     try { $conn->query("SET time_zone = '+07:00'"); } catch (\Throwable $e) {}
 
     // ตรวจสอบและสร้างตาราง / คอลัมน์ที่จำเป็นโดยอัตโนมัติ (ทำงานเพียงครั้งเดียวเพื่อประสิทธิภาพและความเสถียรของ MySQL)

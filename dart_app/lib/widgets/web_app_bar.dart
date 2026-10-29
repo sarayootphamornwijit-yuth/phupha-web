@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/user_model.dart';
+import 'profile_image.dart';
 import '../services/session_manager.dart';
 import '../screens/login_screen.dart';
 import '../screens/profile_screen.dart';
@@ -16,11 +17,7 @@ class WebAppBar extends StatelessWidget implements PreferredSizeWidget {
   // Callback เมื่อมีการเปลี่ยนแปลงสถานะล็อกอิน (เช่น กดออกจากระบบ)
   final VoidCallback? onAuthStateChanged;
 
-  const WebAppBar({
-    super.key,
-    this.currentUser,
-    this.onAuthStateChanged,
-  });
+  const WebAppBar({super.key, this.currentUser, this.onAuthStateChanged});
 
   @override
   Size get preferredSize => const Size.fromHeight(56.0);
@@ -57,7 +54,9 @@ class WebAppBar extends StatelessWidget implements PreferredSizeWidget {
         color: Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFFE2E8F0), // เส้นขอบล่างบางๆ ตาม variables.css (--border-color)
+            color: Color(
+              0xFFE2E8F0,
+            ), // เส้นขอบล่างบางๆ ตาม variables.css (--border-color)
             width: 1.0,
           ),
         ),
@@ -91,7 +90,8 @@ class WebAppBar extends StatelessWidget implements PreferredSizeWidget {
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
-            color: AppColors.primaryDark, // สีเขียวเข้ม #1B5E20 ตาม mobile-header-brand
+            color: AppColors
+                .primaryDark, // สีเขียวเข้ม #1B5E20 ตาม mobile-header-brand
             letterSpacing: 0.3,
           ),
         ),
@@ -178,12 +178,16 @@ class WebAppBar extends StatelessWidget implements PreferredSizeWidget {
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
-        child: Text(
-          initialChar,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+        child: ProfileImage(
+          path: currentUser?.profilePicture,
+          size: 34,
+          fallback: Text(
+            initialChar,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
@@ -210,7 +214,9 @@ class WebAppBar extends StatelessWidget implements PreferredSizeWidget {
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6), // ความโค้งมน 6px ตาม mobile-login-btn
+          borderRadius: BorderRadius.circular(
+            6,
+          ), // ความโค้งมน 6px ตาม mobile-login-btn
         ),
         elevation: 0,
       ),

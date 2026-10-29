@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `age` INT DEFAULT NULL,
     `location` VARCHAR(255) DEFAULT NULL,
     `phone` VARCHAR(50) DEFAULT NULL,
+    `email` VARCHAR(255) DEFAULT NULL,
     `interests` TEXT DEFAULT NULL,
     `image` VARCHAR(255) DEFAULT NULL,
     `role` ENUM('member', 'committee', 'leader', 'advisor', 'admin') DEFAULT 'member',

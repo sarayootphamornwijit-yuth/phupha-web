@@ -8,7 +8,8 @@ class CommitteeDirectoryScreen extends StatefulWidget {
   const CommitteeDirectoryScreen({super.key});
 
   @override
-  State<CommitteeDirectoryScreen> createState() => _CommitteeDirectoryScreenState();
+  State<CommitteeDirectoryScreen> createState() =>
+      _CommitteeDirectoryScreenState();
 }
 
 class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
@@ -19,50 +20,7 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
   // ข้อมูลคณะกรรมการแยกตามชั้นปี
   final Map<int, List<Map<String, dynamic>>> _committeeByYear = {
     1: [],
-    2: [
-      {
-        'name': 'นาย ธนกร แซ่ย่าง',
-        'committee_position': 'ประธานชมรม',
-        'faculty': 'วิทยาการจัดการ',
-        'major': 'ธุรกิจระหว่างประเทศ',
-        'image': '',
-      },
-      {
-        'name': 'นางสาว ฟ้าใส แซ่ย่าง',
-        'committee_position': 'รองประธานชมรม',
-        'faculty': 'ครุศาสตร์',
-        'major': 'ชีววิทยา',
-        'image': '',
-      },
-      {
-        'name': 'นางสาว ชนิภาพร แซ่เห้อ',
-        'committee_position': 'เหรัญญิก',
-        'faculty': 'ครุศาสตร์',
-        'major': 'ชีววิทยา',
-        'image': '',
-      },
-      {
-        'name': 'นาย อดิศักดิ์ แซ่ลี',
-        'committee_position': 'เลขาสะลวง',
-        'faculty': 'ครุศาสตร์',
-        'major': '',
-        'image': '',
-      },
-      {
-        'name': 'นางสาว ภัทรินทร์ ชรินทร์ภรณ์',
-        'committee_position': 'เลขาเวียงบัว',
-        'faculty': 'มนุษยศาสตร์และสังคมศาสตร์',
-        'major': '',
-        'image': '',
-      },
-      {
-        'name': 'นางสาว เกศรินทร์ อุไรรุ่งโรจน์',
-        'committee_position': 'เลขาเวียงบัว',
-        'faculty': 'มนุษยศาสตร์และสังคมศาสตร์',
-        'major': '',
-        'image': '',
-      },
-    ],
+    2: [],
     3: [],
     4: [],
   };
@@ -88,7 +46,8 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
   Future<void> _fetchCommittees() async {
     setState(() => _isLoading = true);
     final res = await ApiService.getCommittees();
-    if (res.isSuccess && res.data != null && res.data!.isNotEmpty) {
+    if (!mounted) return;
+    if (res.isSuccess && res.data != null) {
       final Map<int, List<Map<String, dynamic>>> grouped = {
         1: [],
         2: [],
@@ -96,7 +55,8 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
         4: [],
       };
       for (var item in res.data!) {
-        final year = int.tryParse(item['academic_year']?.toString() ?? '0') ?? 0;
+        final year =
+            int.tryParse(item['academic_year']?.toString() ?? '0') ?? 0;
         if (grouped.containsKey(year)) {
           final posKey = item['committee_position']?.toString() ?? '';
           item['position_thai'] = _positionLabelsThai[posKey] ?? posKey;
@@ -105,9 +65,7 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
       }
       setState(() {
         for (var y = 1; y <= 4; y++) {
-          if (grouped[y]!.isNotEmpty) {
-            _committeeByYear[y] = grouped[y]!;
-          }
+          _committeeByYear[y] = grouped[y]!;
         }
       });
     }
@@ -132,7 +90,11 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.primaryDark,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -157,10 +119,7 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
                 const Text(
                   'คณะกรรมการชมรมเพื่อนภูผา มหาวิทยาลัยราชภัฏเชียงใหม่',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    color: Color(0xFF64748B),
-                  ),
+                  style: TextStyle(fontSize: 13.5, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 20),
 
@@ -176,17 +135,26 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
                         borderRadius: BorderRadius.circular(10),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primary : Colors.white,
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : const Color(0xFFCBD5E1),
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.primary.withValues(alpha: 0.3),
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),
@@ -197,8 +165,12 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
                             'ชั้นปี $year',
                             style: TextStyle(
                               fontSize: 13.5,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected ? Colors.white : const Color(0xFF475569),
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFF475569),
                             ),
                           ),
                         ),
@@ -221,12 +193,18 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
+                      border: Border.all(
+                        color: const Color(0xFFCBD5E1),
+                        style: BorderStyle.solid,
+                      ),
                     ),
                     child: Text(
                       'ยังไม่มีข้อมูลคณะกรรมการชั้นปี $_selectedYear',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                      style: const TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 14,
+                      ),
                     ),
                   )
                 else
@@ -262,7 +240,8 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
   // การ์ดกรรมการแต่ละคน
   Widget _buildCommitteeCard(Map<String, dynamic> member) {
     final name = member['name']?.toString() ?? '-';
-    final position = member['position_thai']?.toString() ??
+    final position =
+        member['position_thai']?.toString() ??
         member['committee_position']?.toString() ??
         'คณะกรรมการ';
     final faculty = member['faculty']?.toString() ?? '';
@@ -349,10 +328,7 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
               faculty,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF94A3B8),
-              ),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
             ),
 
           // สาขาวิชา
@@ -361,10 +337,7 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
               major,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF94A3B8),
-              ),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
             ),
         ],
       ),
@@ -375,11 +348,7 @@ class _CommitteeDirectoryScreenState extends State<CommitteeDirectoryScreen> {
     return Container(
       color: const Color(0xFFF1F5F9),
       child: const Center(
-        child: Icon(
-          Icons.person,
-          size: 42,
-          color: Color(0xFF475569),
-        ),
+        child: Icon(Icons.person, size: 42, color: Color(0xFF475569)),
       ),
     );
   }

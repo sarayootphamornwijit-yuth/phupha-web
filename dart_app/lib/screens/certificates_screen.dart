@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
+import '../services/mobile_document_service.dart';
 import '../services/session_manager.dart';
 import '../widgets/web_app_bar.dart';
 import '../widgets/web_drawer.dart';
@@ -42,6 +43,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
 
     if (user != null) {
       final response = await ApiService.getCertificates(user.userId);
+      if (!mounted) return;
       if (response.isSuccess && response.data != null) {
         final data = response.data!;
         setState(() {
@@ -64,9 +66,33 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
     });
   }
 
+  bool _printing = false;
+
+  Future<void> _printCertificate() async {
+    if (_printing) return;
+    setState(() => _printing = true);
+    try {
+      await MobileDocumentService.printDocument(
+        'generate_certificate.php',
+        'เกียรติบัตรชมรมเพื่อนภูผา',
+      );
+      if (mounted) _fetchCertificateData();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เปิดเกียรติบัตรไม่ได้: ${MobileDocumentService.errorMessage(error)}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _printing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final progress = _threshold > 0 ? (_points / _threshold).clamp(0.0, 1.0) : 0.0;
+    final progress = _threshold > 0
+        ? (_points / _threshold).clamp(0.0, 1.0)
+        : 0.0;
     final remaining = (_threshold - _points) > 0 ? (_threshold - _points) : 0;
 
     return Scaffold(
@@ -80,7 +106,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
         currentUser: _currentUser,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -121,14 +149,23 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white24,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                _isQualified ? 'ผ่านเกณฑ์แล้ว' : 'ยังไม่ผ่านเกณฑ์',
-                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                _isQualified
+                                    ? 'ผ่านเกณฑ์แล้ว'
+                                    : 'ยังไม่ผ่านเกณฑ์',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -151,7 +188,10 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                             const SizedBox(width: 8),
                             Text(
                               '/ $_threshold แต้มจิตอาสา',
-                              style: const TextStyle(color: Colors.white70, fontSize: 16),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
@@ -166,7 +206,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                             minHeight: 10,
                             backgroundColor: Colors.white24,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              _isQualified ? Colors.white : Colors.lightGreenAccent,
+                              _isQualified
+                                  ? Colors.white
+                                  : Colors.lightGreenAccent,
                             ),
                           ),
                         ),
@@ -176,7 +218,10 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                           _isQualified
                               ? 'ยินดีด้วย! คุณมีแต้มจิตอาสาครบตามเกณฑ์สำหรับออกเกียรติบัตรแล้ว'
                               : 'ต้องการอีก $remaining แต้มเพื่อปลดล็อกเกียรติบัตรประจำปีการศึกษา',
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -187,12 +232,30 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                   // หัวข้อ: ประวัติเกียรติบัตร
                   const Text(
                     'เกียรติบัตรของฉัน',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
                   const SizedBox(height: 12),
 
+                  if (_isQualified)
+                    OutlinedButton.icon(
+                      onPressed: _printing ? null : _printCertificate,
+                      icon: const Icon(Icons.print),
+                      label: Text(
+                        _printing
+                            ? 'กำลังเปิดเอกสาร...'
+                            : 'พิมพ์เกียรติบัตร / บันทึก PDF',
+                      ),
+                    ),
+
                   _certificates.isEmpty
-                      ? const DashedContainer(message: 'ยังไม่มีประวัติเกียรติบัตรที่ออกให้ในระบบขณะนี้')
+                      ? const DashedContainer(
+                          message:
+                              'ยังไม่มีประวัติเกียรติบัตรที่ออกให้ในระบบขณะนี้',
+                        )
                       : ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -205,20 +268,30 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                side: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                ),
                               ),
                               child: ListTile(
                                 leading: const CircleAvatar(
                                   backgroundColor: Color(0xFFFFF8E1),
-                                  child: Icon(Icons.workspace_premium, color: Color(0xFFFFA000)),
+                                  child: Icon(
+                                    Icons.workspace_premium,
+                                    color: Color(0xFFFFA000),
+                                  ),
                                 ),
                                 title: Text(
-                                  cert['certificate_no'] ?? 'เกียรติบัตรจิตอาสา',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  cert['title'] ?? 'เกียรติบัตรจิตอาสา',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 subtitle: Text(
                                   'วันที่ออก: ${cert['date_issued'] ?? '-'}',
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted,
+                                  ),
                                 ),
                               ),
                             );
