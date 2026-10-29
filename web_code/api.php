@@ -555,6 +555,8 @@ if ($action === 'get_majors') {
             $stmt->close();
         }
     }
+    sendResponse('success', 'ดึงข้อมูลสาขาวิชาสำเร็จ', $majors);
+}
 // กรณีเรียกดูรายชื่อคณะกรรมการทำเนียบผู้นำรุ่น
 if ($action === 'get_committees') {
     $stmt = $conn->prepare("
